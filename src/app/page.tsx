@@ -65,24 +65,26 @@ export default function Home() {
   };
 
   return (
-    <main className="flex justify-center items-start min-h-screen bg-background py-10">
+    <main className="flex min-h-screen bg-background items-center justify-center">
       <div className="flex flex-col items-center w-full">
-        <Card className="w-full max-w-lg ">
+        <Card className="w-full max-w-lg mb-4">
           <CardHeader>
             <CardTitle className="text-3xl text-left mb-1">
-              Parkzeit Erinnerungen
+              Vermeide Strafzettel dank Erinnerungen!
             </CardTitle>
             <div className="text-left text-muted-foreground text-base mb-0 mt-0" style={{marginTop: 0}}>
-              Wir erinnern dich rechtzeitig per SMS oder WhatsApp an das Ende deiner Parkzeit.<br />
-              So kannst du Strafzettel vermeiden und entspannt parken.
-              Einfach Kennzeichen und Kontaktmethode eintragen!
+              Und so einfach geht's: Gib hier dein Kennzeichen, deine Telefonnummer und deine bevorzugte Erinnerungsmethode ein und bekomme nie wieder einen Strafzettel.<br />
+              Wir erinnern dich bequem per Textnachricht 15 Minuten vor Ablauf deiner kostenlosen Parkzeit.
             </div>
           </CardHeader>
         <CardContent>
           {success ? (
             <div className="text-black text-left font-semibold py-8">
               🎉 Du stehst auf der Warteliste!<br />
-              Wir benachrichtigen dich, sobald die Erinnerungen starten.
+              Wir benachrichtigen dich, sobald die Erinnerungen starten.<br />
+              <span className="block text-xs text-red-700 bg-red-100 rounded px-3 py-2 mt-4">
+                <strong>Wichtiger Hinweis:</strong> Aktuell werden noch <u>keine</u> Erinnerungen verschickt. Wir übernehmen keine Haftung, falls du zu lange parkst und eine Parkstrafe erhältst.
+              </span>
             </div>
           ) : (
             <form
@@ -209,9 +211,9 @@ export default function Home() {
               >
                 {submitting ? "Wird gesendet..." : "Zur Warteliste anmelden"}
               </Button>
-                <div className="text-xs text-muted-foreground mt-2 mb-2 leading-snug">
-                  Der Service befindet sich aktuell in einer Testphase. Reminders werden noch nicht verschickt – wir prüfen zunächst das Interesse. Trag dich ein und wir halten dich auf dem Laufenden. Mit Klick auf „Zur Warteliste anmelden“ erklärst du dich damit einverstanden, dass wir deine Angaben ausschließlich für diesen Test speichern und dich kontaktieren, sobald es Neuigkeiten gibt. Mehr dazu in unserer <a href="/datenschutz" className="underline" target="_blank">Datenschutzerklärung</a>.
-                </div>
+              <div className="text-xs text-left text-yellow-700 bg-yellow-50 rounded px-3 py-2 mt-3">
+                <strong>Hinweis:</strong> Der Service befindet sich aktuell in einer Testphase. Erinnerungen werden noch nicht verschickt – wir prüfen zunächst das Interesse. Trag dich ein und wir halten dich auf dem Laufenden. Mit Klick auf „Zur Warteliste anmelden“ erklärst du dich damit einverstanden, dass wir deine Angaben ausschließlich für diesen Test speichern und dich kontaktieren, sobald es Neuigkeiten gibt. Mehr dazu in unserer <a href="/datenschutz" className="underline" target="_blank">Datenschutzerklärung</a>.
+              </div>
             </form>
           )}
         </CardContent>
