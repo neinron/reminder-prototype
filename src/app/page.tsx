@@ -87,6 +87,11 @@ export default function Home() {
           ) : (
             <form
               onSubmit={e => {
+                if (!plate.trim()) {
+                  e.preventDefault();
+                  setError("Bitte gib dein Kennzeichen an.");
+                  return;
+                }
                 if (!contactValue.trim()) {
                   e.preventDefault();
                   setError("Bitte gib deine Telefonnummer an.");
@@ -116,6 +121,7 @@ export default function Home() {
                       if (typeof e.rest === "string") setRest(e.rest);
                     }}
                     className="mt-1"
+                    required
                   />
                 </div>
               </div>

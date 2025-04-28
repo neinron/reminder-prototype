@@ -1,7 +1,7 @@
 import React, { useState, useEffect, useMemo } from "react";
 import { Input } from "./input";
 
-export interface LicensePlateInputProps {
+export interface LicensePlateInputProps extends React.InputHTMLAttributes<HTMLInputElement> {
   value?: string;
   onChange?: (e: { target: { value: string }, city?: string, rest?: string }) => void;
   className?: string;
