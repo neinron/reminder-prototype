@@ -133,7 +133,7 @@ export default function Home() {
               </div>
               <div className="mb-4">
                 <label htmlFor="name" className="block font-bold mb-1">
-                  Name (optional)
+                  Name <span className="text-xs font-normal text-gray-400 ml-1">(optional)</span>
                 </label>
                 <Input
                   id="name"
