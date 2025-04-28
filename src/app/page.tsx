@@ -65,7 +65,7 @@ export default function Home() {
   };
 
   return (
-    <main className="flex min-h-screen bg-background items-center justify-center">
+    <main className="flex min-h-screen bg-background items-center justify-center pt-[110px] sm:pt-[90px]">
       <div className="flex flex-col items-center w-full">
         <Card className="w-full max-w-lg mb-4">
           <CardHeader>
