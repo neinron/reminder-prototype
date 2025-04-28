@@ -18,6 +18,7 @@ export default function Home() {
   const [rest, setRest] = useState("");
   // Kontaktkanäle
   const [contactValue, setContactValue] = useState("");
+  const [nameValue, setNameValue] = useState("");
   const [smsSelected, setSmsSelected] = useState(false);
   const [whatsappSelected, setWhatsappSelected] = useState(false);
   const [submitting, setSubmitting] = useState(false);
@@ -46,6 +47,7 @@ export default function Home() {
       plate: stitchedPlate,
       channel,
       phone: contactValue,
+      name: nameValue,
     };
 
     const res = await fetch("/api/subscribe", {
@@ -118,7 +120,19 @@ export default function Home() {
                 </div>
               </div>
               <div className="mb-4">
-                <label htmlFor="contact" className="block font-bold mb-1">
+                <label htmlFor="name" className="block font-bold mb-1">
+                  Name (optional)
+                </label>
+                <Input
+                  id="name"
+                  type="text"
+                  placeholder="Dein Name"
+                  value={nameValue}
+                  onChange={e => setNameValue(e.target.value)}
+                  className="w-full mb-2"
+                  autoComplete="name"
+                />
+                <label htmlFor="contact" className="block font-bold mb-1 mt-4">
                   Telefonnummer
                 </label>
                 <Input
