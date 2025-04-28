@@ -25,6 +25,13 @@ export default function RootLayout({
 }>) {
   return (
     <html lang="en">
+      <head>
+        <meta property="og:title" content="Wemolo Reminders" />
+        <meta property="og:description" content="Deine Parkzeit Erinnerungen" />
+        <meta property="og:image" content="/wemolo-meta.png" />
+        <meta property="og:type" content="website" />
+        <meta property="og:url" content="https://wemolo-reminders.vercel.app" />
+      </head>
       <body
         className={`${albertSans.variable} font-sans antialiased min-h-screen flex flex-col`}
       >
