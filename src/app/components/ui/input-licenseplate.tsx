@@ -92,9 +92,9 @@ export const LicensePlateInput = React.forwardRef<HTMLInputElement, LicensePlate
         </div>
 
         {/* Separator dots */}
-        <div className="flex flex-col justify-center mx-1">
-          <span className="w-5 h-5 bg-gray-200 rounded-full my-1 inline-block" />
-          <span className="w-5 h-5 bg-gray-200 rounded-full my-1 inline-block" />
+        <div className="flex flex-col items-center mx-1 gap-1" style={{height: '3rem', justifyContent: 'center'}}>
+          <span className="w-5 h-5 bg-gray-200 rounded-full inline-block" />
+          <span className="w-5 h-5 bg-gray-200 rounded-full inline-block" />
         </div>
 
         {/* Rest input */}
