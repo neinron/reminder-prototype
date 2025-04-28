@@ -1,103 +1,198 @@
+"use client";
+import { useEffect, useState } from "react";
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { Input } from "@/components/ui/input";
+import { Button } from "@/components/ui/button";
+import { Label } from "@/components/ui/label";
+import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
 import Image from "next/image";
-
+import { Checkbox } from "@/components/ui/checkbox"
+import { LicensePlateInput } from "@/components/ui/input-licenseplate"
+import React from "react";
+import { Mail } from "lucide-react";
+import { FaWhatsapp } from "react-icons/fa";
+ 
 export default function Home() {
-  return (
-    <div className="grid grid-rows-[20px_1fr_20px] items-center justify-items-center min-h-screen p-8 pb-20 gap-16 sm:p-20 font-[family-name:var(--font-geist-sans)]">
-      <main className="flex flex-col gap-[32px] row-start-2 items-center sm:items-start">
-        <Image
-          className="dark:invert"
-          src="/next.svg"
-          alt="Next.js logo"
-          width={180}
-          height={38}
-          priority
-        />
-        <ol className="list-inside list-decimal text-sm/6 text-center sm:text-left font-[family-name:var(--font-geist-mono)]">
-          <li className="mb-2 tracking-[-.01em]">
-            Get started by editing{" "}
-            <code className="bg-black/[.05] dark:bg-white/[.06] px-1 py-0.5 rounded font-[family-name:var(--font-geist-mono)] font-semibold">
-              src/app/page.tsx
-            </code>
-            .
-          </li>
-          <li className="tracking-[-.01em]">
-            Save and see your changes instantly.
-          </li>
-        </ol>
+  const [plate, setPlate] = useState("");
+  const [city, setCity] = useState("");
+  const [rest, setRest] = useState("");
+  // Kontaktkanäle
+  const [contactValue, setContactValue] = useState("");
+  const [smsSelected, setSmsSelected] = useState(false);
+  const [whatsappSelected, setWhatsappSelected] = useState(false);
+  const [submitting, setSubmitting] = useState(false);
+  const [success, setSuccess] = useState(false);
+  const [error, setError] = useState<string | null>(null);
+  const [acceptedTerms, setAcceptedTerms] = useState(false);
 
-        <div className="flex gap-4 items-center flex-col sm:flex-row">
-          <a
-            className="rounded-full border border-solid border-transparent transition-colors flex items-center justify-center bg-foreground text-background gap-2 hover:bg-[#383838] dark:hover:bg-[#ccc] font-medium text-sm sm:text-base h-10 sm:h-12 px-4 sm:px-5 sm:w-auto"
-            href="https://vercel.com/new?utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-            target="_blank"
-            rel="noopener noreferrer"
-          >
-            <Image
-              className="dark:invert"
-              src="/vercel.svg"
-              alt="Vercel logomark"
-              width={20}
-              height={20}
-            />
-            Deploy now
-          </a>
-          <a
-            className="rounded-full border border-solid border-black/[.08] dark:border-white/[.145] transition-colors flex items-center justify-center hover:bg-[#f2f2f2] dark:hover:bg-[#1a1a1a] hover:border-transparent font-medium text-sm sm:text-base h-10 sm:h-12 px-4 sm:px-5 w-full sm:w-auto md:w-[158px]"
-            href="https://nextjs.org/docs?utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-            target="_blank"
-            rel="noopener noreferrer"
-          >
-            Read our docs
-          </a>
-        </div>
-      </main>
-      <footer className="row-start-3 flex gap-[24px] flex-wrap items-center justify-center">
-        <a
-          className="flex items-center gap-2 hover:underline hover:underline-offset-4"
-          href="https://nextjs.org/learn?utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-          target="_blank"
-          rel="noopener noreferrer"
-        >
-          <Image
-            aria-hidden
-            src="/file.svg"
-            alt="File icon"
-            width={16}
-            height={16}
-          />
-          Learn
-        </a>
-        <a
-          className="flex items-center gap-2 hover:underline hover:underline-offset-4"
-          href="https://vercel.com/templates?framework=next.js&utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-          target="_blank"
-          rel="noopener noreferrer"
-        >
-          <Image
-            aria-hidden
-            src="/window.svg"
-            alt="Window icon"
-            width={16}
-            height={16}
-          />
-          Examples
-        </a>
-        <a
-          className="flex items-center gap-2 hover:underline hover:underline-offset-4"
-          href="https://nextjs.org?utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-          target="_blank"
-          rel="noopener noreferrer"
-        >
-          <Image
-            aria-hidden
-            src="/globe.svg"
-            alt="Globe icon"
-            width={16}
-            height={16}
-          />
-          Go to nextjs.org →
-        </a>
-      </footer>
-    </div>
+  // Log visit on page load
+  useEffect(() => {
+    fetch("/api/visit", { method: "POST" });
+  }, []);
+
+  const handleSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
+    setSubmitting(true);
+    setError(null);
+
+    // Kennzeichen mit Bindestrich zusammensetzen
+    const stitchedPlate = city && rest ? `${city}-${rest}` : plate;
+    // Channel-String bestimmen
+    let channel = "";
+    if (smsSelected && whatsappSelected) channel = "sms+whatsapp";
+    else if (smsSelected) channel = "sms";
+    else if (whatsappSelected) channel = "whatsapp";
+    const payload: Record<string, string> = {
+      plate: stitchedPlate,
+      channel,
+      phone: contactValue,
+    };
+
+    const res = await fetch("/api/subscribe", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify(payload),
+    });
+
+    if (res.ok) {
+      setSuccess(true);
+    } else {
+      setError("Irgendwas lief schief. Bitte versuch es erneut.");
+    }
+    setSubmitting(false);
+  };
+
+  return (
+    <main className="flex justify-center items-start min-h-screen bg-background py-10">
+      <div className="flex flex-col items-center w-full">
+        <Card className="w-full max-w-lg ">
+          <CardHeader>
+            <CardTitle className="text-3xl text-left mb-1">
+              Parkzeit Erinnerungen
+            </CardTitle>
+            <div className="text-left text-muted-foreground text-base mb-0 mt-0" style={{marginTop: 0}}>
+              Wir erinnern dich rechtzeitig per SMS oder WhatsApp an das Ende deiner Parkzeit.<br />
+              So kannst du Strafzettel vermeiden und entspannt parken.
+              Einfach Kennzeichen und Kontaktmethode eintragen!
+            </div>
+          </CardHeader>
+        <CardContent>
+          {success ? (
+            <div className="text-black text-left font-semibold py-8">
+              🎉 Du stehst auf der Warteliste!<br />
+              Wir benachrichtigen dich, sobald die Erinnerungen starten.
+            </div>
+          ) : (
+            <form
+              onSubmit={e => {
+                if (!contactValue.trim()) {
+                  e.preventDefault();
+                  setError("Bitte gib deine Telefonnummer an.");
+                  return;
+                }
+                if (!acceptedTerms) {
+                  e.preventDefault();
+                  setError("Bitte akzeptiere die Datenschutzerklärung.");
+                  return;
+                }
+                setError("");
+                handleSubmit(e);
+              }}
+              className="space-y-4"
+            >
+
+              <div>
+                <label htmlFor="plate" className="block font-bold mb-1">Kennzeichen</label>
+                <div style={{height: 10}} />
+                <div className="flex justify-center w-full">
+                  <LicensePlateInput
+                    id="plate"
+                    value={plate}
+                    onChange={e => {
+                      setPlate(e.target.value);
+                      if (typeof e.city === "string") setCity(e.city);
+                      if (typeof e.rest === "string") setRest(e.rest);
+                    }}
+                    className="mt-1"
+                  />
+                </div>
+              </div>
+              <div className="mb-4">
+                <label htmlFor="contact" className="block font-bold mb-1">
+                  Telefonnummer
+                </label>
+                <Input
+                  id="contact"
+                  type="tel"
+                  placeholder="z.B. +491701234567"
+                  value={contactValue}
+                  onChange={e => setContactValue(e.target.value)}
+                  className="w-full mb-2"
+                  autoComplete="off"
+                  required
+                />
+                <div className="flex gap-2 mt-2 w-full">
+                  <Button
+                    type="button"
+                    variant="outline"
+                    onClick={() => setSmsSelected(v => !v)}
+                    className={
+                      (smsSelected
+                        ? "bg-[#5046e8] border-2 border-[#5046e8] text-white"
+                        : "bg-white border-2 border-black text-black") +
+                      " flex-1 min-w-0 px-3 py-2 rounded-full font-bold"
+                    }
+                  >
+                    <Mail
+                      className="inline mr-1 align-text-bottom"
+                      size={18}
+                      color={smsSelected ? "white" : "black"}
+                    />
+                    SMS
+                  </Button>
+                  <Button
+                    type="button"
+                    variant="outline"
+                    onClick={() => setWhatsappSelected(v => !v)}
+                    className={
+                      (whatsappSelected
+                        ? "bg-[#5046e8] border-2 border-[#5046e8] text-white"
+                        : "bg-white border-2 border-black text-black") +
+                      " flex-1 min-w-0 px-3 py-2 rounded-full font-bold"
+                    }
+                  >
+                    <FaWhatsapp
+                      className="inline mr-1 text-lg align-text-bottom"
+                      size={18}
+                      color={whatsappSelected ? "white" : "black"}
+                    />
+                    WhatsApp
+                  </Button>
+                </div>
+              </div>
+              <div className="flex items-center space-x-2">
+                <Checkbox id="terms" checked={acceptedTerms} onCheckedChange={val => setAcceptedTerms(!!val)} />
+                <Label htmlFor="terms">Ich akzeptiere die <a href="/datenschutz" className="underline" target="_blank" rel="noopener noreferrer">Datenschutzerklärung</a><span className="text-red-600 ml-1">*</span></Label>
+              </div>
+              
+              {error && (
+                <div className="text-red-600 text-sm text-center">{error}</div>
+              )}
+              <Button
+                type="submit"
+                className="w-full"
+                disabled={submitting}
+              >
+                {submitting ? "Wird gesendet..." : "Zur Warteliste anmelden"}
+              </Button>
+                <div className="text-xs text-muted-foreground mt-2 mb-2 leading-snug">
+                  Der Service befindet sich aktuell in einer Testphase. Reminders werden noch nicht verschickt – wir prüfen zunächst das Interesse. Trag dich ein und wir halten dich auf dem Laufenden. Mit Klick auf „Zur Warteliste anmelden“ erklärst du dich damit einverstanden, dass wir deine Angaben ausschließlich für diesen Test speichern und dich kontaktieren, sobald es Neuigkeiten gibt. Mehr dazu in unserer <a href="/datenschutz" className="underline" target="_blank">Datenschutzerklärung</a>.
+                </div>
+            </form>
+          )}
+        </CardContent>
+        </Card>
+      </div>
+    </main>
   );
 }
