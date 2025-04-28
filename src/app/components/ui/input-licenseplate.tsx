@@ -58,7 +58,7 @@ export const LicensePlateInput = React.forwardRef<HTMLInputElement, LicensePlate
         <div
           className="flex flex-col items-center justify-center"
           style={{
-            width: 36,
+            width: 30,
             height: "100%",
             background: "#5046E7",
             color: "#fff",
