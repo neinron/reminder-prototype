@@ -128,7 +128,7 @@ export default function Home() {
                   value={contactValue}
                   onChange={e => setContactValue(e.target.value)}
                   className="w-full mb-2"
-                  autoComplete="off"
+                  autoComplete="tel"
                   required
                 />
                 <div className="flex gap-2 mt-2 w-full">
