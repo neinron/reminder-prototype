@@ -87,6 +87,11 @@ export default function Home() {
           ) : (
             <form
               onSubmit={e => {
+                if (!plate.trim() && !contactValue.trim()) {
+                  e.preventDefault();
+                  setError("Bitte gib sowohl dein Kennzeichen als auch deine Telefonnummer an.");
+                  return;
+                }
                 if (!plate.trim()) {
                   e.preventDefault();
                   setError("Bitte gib dein Kennzeichen an.");
