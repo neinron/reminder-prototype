@@ -87,14 +87,13 @@ export default function Home() {
           ) : (
             <form
               onSubmit={e => {
-                if (!plate.trim() && !contactValue.trim()) {
+                // Kennzeichen: beide Felder müssen ausgefüllt sein
+                const plateParts = plate.trim().split(/\s+/);
+                const cityPart = plateParts[0] || "";
+                const restPart = plateParts[1] || "";
+                if (!cityPart || !restPart) {
                   e.preventDefault();
-                  setError("Bitte gib sowohl dein Kennzeichen als auch deine Telefonnummer an.");
-                  return;
-                }
-                if (!plate.trim()) {
-                  e.preventDefault();
-                  setError("Bitte gib dein Kennzeichen an.");
+                  setError("Bitte gib sowohl das Ortskürzel als auch die Buchstaben/Zahlen des Kennzeichens an.");
                   return;
                 }
                 if (!contactValue.trim()) {
