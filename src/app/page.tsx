@@ -73,7 +73,7 @@ export default function Home() {
               Vermeide Strafzettel dank Erinnerungen!
             </CardTitle>
             <div className="text-left text-muted-foreground text-base mb-0 mt-0" style={{marginTop: 0}}>
-              Und so einfach geht's: Gib hier dein Kennzeichen, deine Telefonnummer und deine bevorzugte Erinnerungsmethode ein und bekomme nie wieder einen Strafzettel.<br />
+              Und so einfach geht's: Gib hier dein Kennzeichen, deine Telefonnummer und deine bevorzugte Kontaktmethode ein und bekomme nie wieder einen Strafzettel.<br />
               Wir erinnern dich bequem per Textnachricht 15 Minuten vor Ablauf deiner kostenlosen Parkzeit.
             </div>
           </CardHeader>
