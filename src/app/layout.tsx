@@ -35,30 +35,28 @@ export default function RootLayout({
       <body
         className={`${albertSans.variable} font-sans antialiased min-h-screen flex flex-col`}
       >
-        <div style={{position: "fixed", top: 30, left: 30, zIndex: 50}}>
+        <div className="pt-8 pl-8">
           <Link href="/">
             <img src="/logo-wemolo-black@4x.png" alt="Wemolo Logo" style={{height: "auto", width: 124, cursor: 'pointer'}} />
           </Link>
         </div>
-        <div className="flex-1 w-full">{children}</div>
+        <div className="flex-1 w-full mt-8">{children}</div>
         <footer className="w-full h-[149px] bg-black flex flex-col justify-between px-6 py-4">
-  <div className="flex items-start justify-between w-full h-full">
+  <div className="relative flex items-start w-full h-full">
     {/* Logo links oben */}
-    <div className="flex flex-col">
+    <div className="flex flex-col z-10">
       <a href="/">
         <img src="/logo-wemolo-white@4x.png" alt="Wemolo Logo" style={{height: "auto", width: 124, marginBottom: 16, cursor: 'pointer'}} />
       </a>
-      <span className="text-xs text-white mt-2"> 2025 Wemolo GmbH</span>
+      <span className="text-xs text-white mt-10 block"> 2025 Wemolo GmbH</span>
     </div>
-    {/* Mehr Abstand zwischen Logo und Links */}
-    <div className="mb-8" />
-    {/* Links mittig, aber nicht absolut */}
-    <div className="flex flex-row items-center justify-center gap-4 mt-2 mb-2 px-2">
-              <a href="/impressum" className="text-xs text-white hover:text-gray-300 transition-colors px-2">Impressum</a>
-              <a href="/datenschutz" className="text-xs text-white hover:text-gray-300 transition-colors px-2">Datenschutz</a>
-            </div>
-    {/* Rechts bleibt leer */}
-    <div className="w-32" />
+    {/* Links exakt zentriert im Footer */}
+    <div className="absolute left-1/2 top-[40%] -translate-x-1/2 -translate-y-[40%] flex flex-row items-center justify-center gap-4 px-2">
+      <a href="/impressum" className="text-xs text-white hover:text-gray-300 transition-colors px-2">Impressum</a>
+      <a href="/datenschutz" className="text-xs text-white hover:text-gray-300 transition-colors px-2">Datenschutz</a>
+    </div>
+    {/* Rechts bleibt leer, für optische Balance */}
+    <div className="flex-1" />
   </div>
 </footer>
       </body>

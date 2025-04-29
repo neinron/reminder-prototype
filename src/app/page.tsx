@@ -9,7 +9,7 @@ import Image from "next/image";
 import { Checkbox } from "@/components/ui/checkbox"
 import { LicensePlateInput } from "@/components/ui/input-licenseplate"
 import React from "react";
-import { Mail } from "lucide-react";
+import { Mail, Check, Bell, PartyPopper } from "lucide-react";
 import { FaWhatsapp } from "react-icons/fa";
  
 export default function Home() {
@@ -65,16 +65,26 @@ export default function Home() {
   };
 
   return (
-    <main className="flex min-h-screen bg-background items-center justify-center pt-[110px] sm:pt-[90px]">
-      <div className="flex flex-col items-center w-full">
+    <main className="flex min-h-screen bg-background pt-0">
+      <div className="flex flex-col items-center w-full mt-0">
         <Card className="w-full max-w-lg mb-4">
           <CardHeader>
             <CardTitle className="text-3xl text-left mb-1">
               Vermeide Strafzettel dank Erinnerungen!
             </CardTitle>
-            <div className="text-left text-muted-foreground text-base mb-0 mt-0" style={{marginTop: 0}}>
-              Und so einfach geht's: Gib hier dein Kennzeichen, deine Telefonnummer und deine bevorzugte Kontaktmethode ein und bekomme nie wieder einen Strafzettel.<br />
-              Wir erinnern dich bequem per Nachricht 15 Minuten vor Ablauf deiner kostenlosen Parkzeit.
+            <div className="flex flex-col gap-6 mt-4 mb-2">
+              <div className="flex flex-row items-center gap-5">
+                <Check className="text-[#5046e8]" size={24} />
+                <span className="text-base text-muted-foreground text-left w-full block">Trage dein Kennzeichen und deine Kontaktdaten ein.</span>
+              </div>
+              <div className="flex flex-row items-center gap-5">
+                <Bell className="text-[#5046e8]" size={24} />
+                <span className="text-base text-muted-foreground text-left w-full block">Wir erinnern dich per Nachricht 15 Minuten vor Ablauf deiner Parkzeit.</span>
+              </div>
+              <div className="flex flex-row items-center gap-5">
+                <PartyPopper className="text-[#5046e8]" size={24} />
+                <span className="text-base text-muted-foreground text-left w-full block">So bekommst du nie wieder einen Strafzettel!</span>
+              </div>
             </div>
           </CardHeader>
         <CardContent>
@@ -132,7 +142,7 @@ export default function Home() {
                 </div>
               </div>
               <div className="mb-4">
-                <label htmlFor="name" className="block font-bold mb-1">
+                <label htmlFor="name" className="block font-bold mb-1 flex items-center">
                   Name <span className="text-xs font-normal text-gray-400 ml-1">(optional)</span>
                 </label>
                 <Input
