@@ -28,16 +28,29 @@ export const LicensePlateInput = React.forwardRef<HTMLInputElement, LicensePlate
       if (onChange) onChange({ target: { value: `${val}${rest ? " " + rest : ""}` }, city: val, rest });
     }
     function handleRestChange(e: React.ChangeEvent<HTMLInputElement>) {
-      const val = e.target.value.toUpperCase().replace(/[^A-Z0-9ÄÖÜ]/g, "").slice(0, 8);
+      let val = e.target.value.toUpperCase().replace(/[^A-Z0-9ÄÖÜ]/g, "").slice(0, 8);
+      
+      // Find the position where letters end and numbers begin
+      const lettersEnd = val.search(/\d/);
+      if (lettersEnd !== -1) {
+        // Add space between letters and numbers if not already present
+        if (val[lettersEnd - 1] !== ' ') {
+          val = val.slice(0, lettersEnd) + ' ' + val.slice(lettersEnd);
+        }
+      } else {
+        // Remove any spaces if no numbers are present
+        val = val.replace(/\s/g, '');
+      }
+
       setRest(val);
       if (onChange) onChange({ target: { value: `${city}${val ? " " + val : ""}` }, city, rest: val });
     }
 
     // Dynamically calculate dynamic input widths based on content
     const chUnitPx = 0.55 * inputHeight; // empirically, 1ch ≈ 0.62*height at 3rem
-    const minCityCh = 1.2;
-    const maxCityCh = 3.2;
-    const minRestCh = 6;
+    const minCityCh = 1.8;
+    const maxCityCh = 3.8;
+    const minRestCh = 6.7;
     const maxRestCh = 8;
     const cityInputWidth = Math.max(minCityCh, Math.min(maxCityCh, city.length || 1)) * chUnitPx;
     const restInputWidth = Math.max(minRestCh, Math.min(maxRestCh, rest.length || 2)) * chUnitPx;
@@ -116,7 +129,7 @@ export const LicensePlateInput = React.forwardRef<HTMLInputElement, LicensePlate
             id={id ? id + "-rest" : undefined}
             value={rest}
             onChange={handleRestChange}
-            placeholder="AB1234"
+            placeholder="AB 1234"
             maxLength={7}
             inputMode="text"
             className="font-bold text-center bg-white placeholder:text-gray-400 rounded-md"
