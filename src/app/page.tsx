@@ -91,7 +91,7 @@ export default function Home() {
           {success ? (
             <div className="text-black text-left font-semibold py-8">
               🎉 Du stehst auf der Warteliste!<br />
-              Wir benachrichtigen dich, sobald die Erinnerungen starten.<br />
+              Wir benachrichtigen dich, sobald der Service zu den Erinnerungen bereit ist.<br />
               <span className="block text-xs text-red-700 bg-red-100 rounded px-3 py-2 mt-4">
                 <strong>Wichtiger Hinweis:</strong> Aktuell werden noch <u>keine</u> Erinnerungen verschickt. Wir übernehmen keine Haftung, falls du zu lange parkst und eine Parkstrafe erhältst.
               </span>
