@@ -206,7 +206,7 @@ const [perUseLabel, setPerUseLabel] = useState(perUseLabels[1]); // Start with 1
         {/* 1. Main benefit */}
         <div>
           <div className="font-base font-semibold mb-2">
-            Was würde dir dieser Service am meisten helfen?
+            Wie würde dir dieser Service am meisten helfen?
           </div>
           <div className="flex flex-col gap-2">
             <div className="flex items-center gap-4 mt-2">
