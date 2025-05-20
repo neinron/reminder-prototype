@@ -188,7 +188,7 @@ const [perUseLabel, setPerUseLabel] = useState(perUseLabels[1]); // Start with 0
         {submitting ? "Wird gesendet..." : "Zur Warteliste anmelden"}
       </Button>
       <div className="text-xs text-left text-yellow-700 bg-yellow-50 rounded px-3 py-2 mt-0">
-        <strong>Hinweis:</strong> Der Service befindet sich aktuell in einer Testphase. Erinnerungen werden noch nicht verschickt – wir prüfen zunächst das Interesse. Trag dich ein und wir halten dich auf dem Laufenden. Mit Klick auf „Zur Warteliste anmelden“ erklärst du dich damit einverstanden, dass wir deine Angaben ausschließlich für diesen Test speichern und dich kontaktieren, sobald es Neuigkeiten gibt. Mehr dazu in unserer <a href="/datenschutz" className="underline" target="_blank">Datenschutzerklärung</a>.
+        <strong>Hinweis:</strong> Der Service ist aktuell in der Testphase – es werden noch keine Erinnerungen verschickt. Wir informieren dich, sobald es Neuigkeiten gibt. Deine Daten verwenden wir ausschließlich für diesen Test. Mehr dazu in unserer <a href="/datenschutz" className="underline" target="_blank">Datenschutzerklärung</a>.
       </div>
     </form>
   );
