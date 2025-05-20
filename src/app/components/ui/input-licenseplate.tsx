@@ -80,7 +80,7 @@ export const LicensePlateInput = React.forwardRef<HTMLInputElement, LicensePlate
           style={{
             width: badgeWidth,
             height: inputHeight + gap * 2,
-            background: "#5046E7",
+            background: "#5046e8",
             color: "#fff",
             flexShrink: 0,
             position: "relative",

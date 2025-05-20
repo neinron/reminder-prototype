@@ -40,7 +40,7 @@ const perUseLabels = ["0,25 €", "0,50 €", "0,75 €", "1,00 €"];
 // Zustände für die Labels
 const [reminderLabel, setReminderLabel] = useState(reminderLabels[1]); // Start with 15 min
 const [monthlyLabel, setMonthlyLabel] = useState(monthlyLabels[1]); // Start with 3 €
-const [perUseLabel, setPerUseLabel] = useState(perUseLabels[2]); // Start with 0,75 €
+const [perUseLabel, setPerUseLabel] = useState(perUseLabels[1]); // Start with 0,75 €
 
   // Log visit on page load
   useEffect(() => {
@@ -100,13 +100,15 @@ const [perUseLabel, setPerUseLabel] = useState(perUseLabels[2]); // Start with 0
       <label htmlFor="plate" className="block font-bold mb-2">
         Kennzeichen
       </label>
-      <LicensePlateInput
-        id="plate"
-        value={plate}
-        onChange={e => setPlate(e.target.value)}
-        className="w-full mb-0"
-        required
-      />
+      <div className="flex justify-center">
+        <LicensePlateInput
+          id="plate"
+          value={plate}
+          onChange={e => setPlate(e.target.value)}
+          className="w-full mb-0"
+          required
+        />
+      </div>
       <label htmlFor="name" className="block font-bold mb-2 mt-[-8px]">
         Name
       </label>
@@ -141,7 +143,7 @@ const [perUseLabel, setPerUseLabel] = useState(perUseLabels[2]); // Start with 0
             (smsSelected
               ? "bg-[#5046e8] border-2 border-[#5046e8] text-white"
               : "bg-white border-2 border-black text-black") +
-            " flex-1 min-w-0 px-3 py-2 rounded-full font-bold"
+            " flex-1 min-w-0 px-3 py-2 rounded-full font-semibold"
           }
         >
           <Mail
@@ -159,19 +161,19 @@ const [perUseLabel, setPerUseLabel] = useState(perUseLabels[2]); // Start with 0
             (whatsappSelected
               ? "bg-[#5046e8] border-2 border-[#5046e8] text-white"
               : "bg-white border-2 border-black text-black") +
-            " flex-1 min-w-0 px-3 py-2 rounded-full font-bold"
+            " flex-1 min-w-0 px-3 py-2 rounded-full font-semibold"
           }
         >
           <FaWhatsapp
-            className="inline mr-1 text-lg align-text-bottom"
-            size={18}
+            className="inline mr-1 text-lg align-text-bottom font-semibold"
+            size={20}
             color={whatsappSelected ? "white" : "black"}
           />
           WhatsApp
         </Button>
       </div>
       <div className="flex items-center space-x-3 mt-5 mb-6">
-        <Checkbox id="terms" checked={acceptedTerms} onCheckedChange={val => setAcceptedTerms(!!val)} className="ml-6" />
+        <Checkbox id="terms" checked={acceptedTerms} onCheckedChange={val => setAcceptedTerms(!!val)} />
         <Label htmlFor="terms">Ich akzeptiere die <a href="/datenschutz" className="underline" target="_blank" rel="noopener noreferrer">Datenschutzerklärung</a><span className="text-red-600 ml-1">*</span></Label>
       </div>
       {error && (
@@ -179,7 +181,7 @@ const [perUseLabel, setPerUseLabel] = useState(perUseLabels[2]); // Start with 0
       )}
       <Button
         type="submit"
-        className="w-full"
+        className="w-full bg-primary hover:bg-primary/80 font-semibold"
         disabled={submitting}
       >
         {submitting ? "Wird gesendet..." : "Zur Warteliste anmelden"}
@@ -195,50 +197,54 @@ const [perUseLabel, setPerUseLabel] = useState(perUseLabels[2]); // Start with 0
     <div className="text-black text-left font-semibold py-4">
       <div className="text-2xl mb-2">🎉 Du stehst auf der Warteliste!</div>
         
-      <div className="text-base font-medium mb-2">
+      <div className="text-base font-normal mb-2">
         Wir benachrichtigen dich, sobald der Service zu den Erinnerungen bereit ist.
       </div>
-      <div className="mt-8 space-y-10">
-        {/* 4. Main benefit */}
+      <div className="border-b border-gray-300 my-4"></div>
+      <div className="text-base font-medium text-primary mb-2">
+        Wir möchten gerne wissen, wie du den Service nutzen würdest und was für dabei wichtig ist. Bitte fülle die folgenden Fragen aus:
+      </div>
+      <div className="mt-4 space-y-6">
+        {/* 1. Main benefit */}
         <div>
-          <div className="font-base font-medium mt-2 mb-4">
+          <div className="font-base font-medium mb-2">
             Was wäre für dich der größte Nutzen dieses Services?
           </div>
           <div className="flex flex-col gap-2">
-            <div className="flex items-center gap-2">
+            <div className="flex items-center gap-4 mt-2">
               <Checkbox id="benefit-stress" checked={benefit.includes('stress')} onCheckedChange={checked => setBenefit(v => checked ? [...v, 'stress'] : v.filter((b: string) => b !== 'stress'))} />
-              <label htmlFor="benefit-stress" className="text-sm font-medium leading-none">Ich spare mir Stress</label>
+              <label htmlFor="benefit-stress" className="text-sm font-normal leading-none">Ich spare mir Stress</label>
             </div>
-            <div className="flex items-center gap-2">
+            <div className="flex items-center gap-4 mt-2">
               <Checkbox id="benefit-fee" checked={benefit.includes('fee')} onCheckedChange={checked => setBenefit(v => checked ? [...v, 'fee'] : v.filter((b: string) => b !== 'fee'))} />
-              <label htmlFor="benefit-fee" className="text-sm font-medium leading-none">Ich vermeide Strafgebühren</label>
+              <label htmlFor="benefit-fee" className="text-sm font-normal leading-none">Ich vermeide Strafgebühren</label>
             </div>
-            <div className="flex items-center gap-2">
+            <div className="flex items-center gap-4 mt-2">
               <Checkbox id="benefit-shopping" checked={benefit.includes('shopping')} onCheckedChange={checked => setBenefit(v => checked ? [...v, 'shopping'] : v.filter( (b: string) => b !== 'shopping'))} />
-              <label htmlFor="benefit-shopping" className="text-sm font-medium leading-none">Ich kann länger einkaufen</label>
+              <label htmlFor="benefit-shopping" className="text-sm font-normal leading-none">Ich kann länger einkaufen</label>
             </div>
-            <div className="flex items-center gap-2">
+            <div className="flex items-center gap-4 mt-2">
               <Checkbox id="benefit-other" checked={benefit.includes('other')} onCheckedChange={checked => setBenefit(v => checked ? [...v, 'other'] : v.filter((b: string) => b !== 'other'))} />
-              <label htmlFor="benefit-other" className="text-sm font-medium leading-none">Etwas anderes …</label>
+              <label htmlFor="benefit-other" className="text-sm font-normal leading-none">Etwas anderes …</label>
             </div>
             {benefit.includes('other') && (
-              <input
+              <Input
                 type="text"
-                className="mt-1 border rounded px-2 py-1 text-sm font-medium"
                 placeholder="Beschreibe hier deinen größten Nutzen"
                 value={benefitOther}
                 onChange={e => setBenefitOther(e.target.value)}
+                className="w-full mt-2 text-sm font-normal"
               />
             )}
           </div>
         </div>
-        {/* 3. Reminder lead time */}
+        {/* 2. Reminder lead time */}
         <div>
-          <div className="font-base font-medium mt-2 mb-4">
+          <div className="font-base font-medium mb-4">
             Wie viele Minuten vor Ablauf deiner Gratis-Parkzeit würdest du am liebsten erinnert werden?
           </div>
           <div className="w-full flex justify-center">
-            <div className="w-full flex flex-col items-center">
+            <div className="w-full flex flex-col items-center mb-0">
               <SliderMarksDemo
                 defaultValue={[reminderLabels.indexOf(reminderLabel)]}
                 max={reminderLabels.length - 1}
@@ -250,16 +256,16 @@ const [perUseLabel, setPerUseLabel] = useState(perUseLabels[2]); // Start with 0
             </div>
           </div>
         </div>
-        {/* 1. Monthly subscription willingness */}
+        {/* 3. Monthly subscription willingness */}
         <div>
-          <div className="font-base font-medium mt-2 mb-0">
+          <div className="font-base font-normal mb-2">
           Stell dir vor, du kannst mit diesem Feature mehrere Parkverstöße (40€/Strafzettel) ersparen.
           </div>
-          <div className="font-base font-medium mt-2 mb-4">
+          <div className="font-base font-medium mb-4">
           Wie viel wäre dir das monatlich wert?
           </div>
           <div className="w-full flex justify-center">
-          <div className="w-full flex flex-col items-center">
+          <div className="w-full flex flex-col items-center mb-4">
               <SliderMarksDemo
                 defaultValue={[monthlyLabels.indexOf(monthlyLabel)]}
                 max={monthlyLabels.length - 1}
@@ -270,9 +276,9 @@ const [perUseLabel, setPerUseLabel] = useState(perUseLabels[2]); // Start with 0
               />
           </div>
         </div>
-        {/* 2. Pay-per-use willingness */}
+        {/* 4. Pay-per-use willingness */}
         <div>
-          <div className="font-base font-medium mt-2 mb-4">
+          <div className="font-base font-medium mb-4">
             Falls du lieber pro Erinnerung zahlen würdest: Welcher Preis pro Reminder wäre für Sie akzeptabel?
           </div>
           <div className="w-full flex justify-center">
@@ -289,8 +295,9 @@ const [perUseLabel, setPerUseLabel] = useState(perUseLabels[2]); // Start with 0
         </div>
         
         {/* Save Button */}
-        <button
-          className="mt-4 px-4 py-2 bg-primary text-white rounded"
+        <Button
+          type="button"
+          className="w-full bg-[#5046e8] hover:bg-[#5046e8] rounded-full font-semibold mt-6"
           onClick={async () => {
             setSaving(true);
             setSaveSuccess(false);
@@ -320,7 +327,7 @@ const [perUseLabel, setPerUseLabel] = useState(perUseLabels[2]); // Start with 0
           disabled={saving}
         >
           {saving ? "Speichern..." : "Antworten speichern"}
-        </button>
+        </Button>
         {saveSuccess && <div className="text-green-600 mt-2">Antworten gespeichert!</div>}
         {saveError && <div className="text-red-600 mt-2">{saveError}</div>}
       </div>
@@ -344,12 +351,12 @@ const [perUseLabel, setPerUseLabel] = useState(perUseLabels[2]); // Start with 0
           <CardContent>
             {success ? PostSubmitContent : PreSubmitContent}
             {!success && (
-            <Accordion type="single" collapsible className="w-full mt-4 mb-10">
+            <Accordion type="single" collapsible className="w-full mt-4 mb-4">
                 <AccordionItem value="item-1">
                   <AccordionTrigger className="text-base text-left">
                     <span className="flex flex-col flex-1">
                       <span className="text-sm font-medium">
-                        Wie funktioniert das Scannerssystem auf diesem Parkplatz?
+                        Wie funktioniert das Scannersystem auf diesem Parkplatz?
                       </span>
                     </span>
                   </AccordionTrigger>
@@ -370,6 +377,11 @@ const [perUseLabel, setPerUseLabel] = useState(perUseLabels[2]); // Start with 0
                 </AccordionItem>
               </Accordion>
             )}
+            <div className="text-left mt-2">
+              <p className="text-sm text-muted-foreground">
+                Möchtest du mehr über Wemolo und unser System erfahren? Besuche uns auf <a href="https://www.wemolo.com" target="_blank" rel="noopener noreferrer" className="underline hover:text-primary">wemolo.com</a>
+              </p>
+            </div>
           </CardContent>
         </Card>
       </div>
