@@ -367,7 +367,7 @@ const [perUseLabel, setPerUseLabel] = useState(perUseLabels[1]); // Start with 0
                       </p>
                       <div className="relative w-full">
                         <img
-                          src="/supervision-rendering.jpg"
+                          src="/Supervision-Rendering.jpg"
                           alt="Parkplatz-Überwachungssystem"
                           className="rounded-lg object-cover"
                         />
