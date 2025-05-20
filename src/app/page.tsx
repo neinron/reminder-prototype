@@ -25,24 +25,22 @@ export default function Home() {
   const [success, setSuccess] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [acceptedTerms, setAcceptedTerms] = useState(false);
-  const [monthlyValue, setMonthlyValue] = useState(2); // €0–5, step 0.1
-  const [perUseValue, setPerUseValue] = useState(0);   // €0–1, step 0.05
-  const [reminderLead, setReminderLead] = useState(2); // 1–20 min, default 10
+
   const [benefit, setBenefit] = useState<string[]>([]); // Array für mehrere Checkboxen
   const [benefitOther, setBenefitOther] = useState(""); // Freitext für "Other"
   const [saving, setSaving] = useState(false);
   const [saveSuccess, setSaveSuccess] = useState(false);
   const [saveError, setSaveError] = useState<string | null>(null);
 
-// Zustände für die Labels
-const [reminderLabel, setReminderLabel] = useState("15 min");
-const [monthlyLabel, setMonthlyLabel] = useState("3 €");
-const [perUseLabel, setPerUseLabel] = useState("0.50 €");
-
 // Labels für die Sliders
 const reminderLabels = ["5 min", "15 min", "25 min", "30 min"];
 const monthlyLabels = ["1 €", "3 €", "5 €", "10 €"];
-const perUseLabels = ["0.10 €", "0.20 €", "0.30 €", "0.40 €", "0.50 €", "0.60 €", "0.70 €", "0.80 €", "0.90 €", "1.00 €"];
+const perUseLabels = ["0,25 €", "0,50 €", "0,75 €", "1,00 €"];
+
+// Zustände für die Labels
+const [reminderLabel, setReminderLabel] = useState(reminderLabels[1]); // Start with 15 min
+const [monthlyLabel, setMonthlyLabel] = useState(monthlyLabels[1]); // Start with 3 €
+const [perUseLabel, setPerUseLabel] = useState(perUseLabels[2]); // Start with 0,75 €
 
   // Log visit on page load
   useEffect(() => {
@@ -242,14 +240,11 @@ const perUseLabels = ["0.10 €", "0.20 €", "0.30 €", "0.40 €", "0.50 €"
           <div className="w-full flex justify-center">
             <div className="w-full flex flex-col items-center">
               <SliderMarksDemo
-                defaultValue={[1]}  // Start with 15 min
+                defaultValue={[reminderLabels.indexOf(reminderLabel)]}
                 max={reminderLabels.length - 1}
                 step={1}
-                value={[reminderLead]}
-                onValueChange={vals => {
-                  setReminderLead(vals[0]);
-                  setReminderLabel(reminderLabels[vals[0]]);
-                }}
+                value={[reminderLabels.indexOf(reminderLabel)]}
+                onValueChange={vals => setReminderLabel(reminderLabels[vals[0]])}
                 labels={reminderLabels}
               />
             </div>
@@ -266,14 +261,11 @@ const perUseLabels = ["0.10 €", "0.20 €", "0.30 €", "0.40 €", "0.50 €"
           <div className="w-full flex justify-center">
           <div className="w-full flex flex-col items-center">
               <SliderMarksDemo
-                defaultValue={[1]}  // Start with 3 €
+                defaultValue={[monthlyLabels.indexOf(monthlyLabel)]}
                 max={monthlyLabels.length - 1}
                 step={1}
-                value={[monthlyValue]}
-                onValueChange={vals => {
-                  setMonthlyValue(vals[0]);
-                  setMonthlyLabel(monthlyLabels[vals[0]]);
-                }}
+                value={[monthlyLabels.indexOf(monthlyLabel)]}
+                onValueChange={vals => setMonthlyLabel(monthlyLabels[vals[0]])}
                 labels={monthlyLabels}
               />
           </div>
@@ -286,14 +278,11 @@ const perUseLabels = ["0.10 €", "0.20 €", "0.30 €", "0.40 €", "0.50 €"
           <div className="w-full flex justify-center">
           <div className="w-full flex flex-col items-center">
               <SliderMarksDemo
-                defaultValue={[4]}  // Start with 0.50 €
+                defaultValue={[perUseLabels.indexOf(perUseLabel)]}
                 max={perUseLabels.length - 1}
                 step={1}
-                value={[perUseValue]}
-                onValueChange={vals => {
-                  setPerUseValue(vals[0]);
-                  setPerUseLabel(perUseLabels[vals[0]]);
-                }}
+                value={[perUseLabels.indexOf(perUseLabel)]}
+                onValueChange={vals => setPerUseLabel(perUseLabels[vals[0]])}
                 labels={perUseLabels}
               />
           </div>
@@ -311,9 +300,9 @@ const perUseLabels = ["0.10 €", "0.20 €", "0.30 €", "0.40 €", "0.50 €"
                 method: "POST",
                 headers: { "Content-Type": "application/json" },
                 body: JSON.stringify({
-                  monthlyValue,
-                  perUseValue,
-                  reminderLead,
+                  monthlyValue: monthlyLabel,
+                  perUseValue: perUseLabel,
+                  reminderLead: reminderLabel,
                   benefit,
                   benefitOther,
                 }),

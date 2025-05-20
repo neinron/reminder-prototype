@@ -2,11 +2,6 @@
 import { NextRequest, NextResponse } from "next/server";
 import supabase from "@/lib/supabase";
 
-// Label arrays
-const reminderLabels = ["5 min", "15 min", "25 min", "30 min"];
-const monthlyLabels = ["1 €", "3 €", "5 €", "10 €"];
-const perUseLabels = ["0.10 €", "0.20 €", "0.30 €", "0.40 €", "0.50 €", "0.60 €", "0.70 €", "0.80 €", "0.90 €", "1.00 €"];
-
 export async function POST(req: NextRequest) {
   try {
     const data = await req.json();
@@ -23,9 +18,9 @@ export async function POST(req: NextRequest) {
     }
 
     const updateData = {
-      reminder_lead: reminderLabels[Number(reminderLead)],
-      monthly_price: monthlyLabels[Number(monthlyValue)],
-      per_use_price: perUseLabels[Number(perUseValue)],
+      reminder_lead: reminderLead,
+      monthly_price: monthlyValue,
+      per_use_price: perUseValue,
       benefit: Array.isArray(benefit) ? benefit : [benefit],
       benefit_other: benefitOther
     };
