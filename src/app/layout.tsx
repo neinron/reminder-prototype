@@ -35,12 +35,12 @@ export default function RootLayout({
       <body
         className={`${albertSans.variable} font-sans antialiased min-h-screen flex flex-col`}
       >
-        <div className="pt-8 pl-8">
+        <div className="pt-8 pl-6">
           <Link href="/">
-            <img src="/logo-wemolo-black@4x.png" alt="Wemolo Logo" style={{height: "auto", width: 124, cursor: 'pointer'}} />
+            <img src="/logo-wemolo-black@4x.png" alt="Wemolo Logo" style={{height: "auto", width: 200, cursor: 'pointer'}} />
           </Link>
         </div>
-        <div className="flex-1 w-full mt-8">{children}</div>
+        <div className="flex-1 w-full mt-2">{children}</div>
         <footer className="w-full h-[149px] bg-black flex flex-col justify-between px-6 py-4">
   <div className="relative flex items-start w-full h-full">
     {/* Logo links oben */}

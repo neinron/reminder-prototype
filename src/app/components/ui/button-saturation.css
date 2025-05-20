@@ -1,0 +1,6 @@
+.button-selected {
+  filter: saturate(1);
+}
+.button-selected:hover {
+  filter: saturate(0.7);
+}
