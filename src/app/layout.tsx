@@ -1,13 +1,8 @@
 import type { Metadata } from "next";
-import { Inter } from "next/font/google";
 import { Albert_Sans } from "next/font/google";
 import Link from "next/link";
 import "./globals.css";
 
-const inter = Inter({
-  variable: "--font-inter",
-  subsets: ["latin"],
-});
 const albertSans = Albert_Sans({
   variable: "--font-albert-sans",
   subsets: ["latin"],
@@ -49,13 +44,13 @@ export default function RootLayout({
               <a href="/">
                 <img src="/logo-wemolo-white@4x.png" alt="Wemolo Logo" style={{height: "auto", width: 170, marginBottom: 16, cursor: 'pointer'}} />
               </a>
-              <span className="text-xs text-white mb-0"> 2025 Wemolo GmbH</span>
             </div>
-          </div>
-          <div className="flex flex-col items-center w-full mt-4">
-            <div className="flex flex-row items-center justify-center gap-6">
-              <a href="/impressum" className="text-xs text-white hover:text-gray-300 transition-colors px-2 mb-6">Impressum</a>
-              <a href="/datenschutz" className="text-xs text-white hover:text-gray-300 transition-colors px-2 mb-6">Datenschutz</a>
+            {/* Impressum und Datenschutz */}
+            <div className="flex flex-col items-center justify-center gap-2">
+              <div className="flex flex-col items-center justify-center gap-4">
+                <a href="/datenschutz" className="text-white text-sm hover:text-[#5046e8] transition-colors">Datenschutzerklärung</a>
+                <a href="/impressum" className="text-white text-sm hover:text-[#5046e8] transition-colors">Impressum</a>
+              </div>
             </div>
           </div>
         </footer>
