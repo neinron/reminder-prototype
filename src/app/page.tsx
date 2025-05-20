@@ -35,12 +35,12 @@ export default function Home() {
 // Labels für die Sliders
 const reminderLabels = ["5 min", "15 min", "25 min", "30 min"];
 const monthlyLabels = ["1 €", "3 €", "5 €", "10 €"];
-const perUseLabels = ["0,25 €", "0,50 €", "0,75 €", "1,00 €"];
+const perUseLabels = ["0,50 €", "1 €", "2 €", "3 €"];
 
 // Zustände für die Labels
 const [reminderLabel, setReminderLabel] = useState(reminderLabels[1]); // Start with 15 min
 const [monthlyLabel, setMonthlyLabel] = useState(monthlyLabels[1]); // Start with 3 €
-const [perUseLabel, setPerUseLabel] = useState(perUseLabels[1]); // Start with 0,75 €
+const [perUseLabel, setPerUseLabel] = useState(perUseLabels[1]); // Start with 1 €
 
   // Log visit on page load
   useEffect(() => {
