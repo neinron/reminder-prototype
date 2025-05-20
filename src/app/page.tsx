@@ -322,8 +322,8 @@ const [perUseLabel, setPerUseLabel] = useState(perUseLabels[1]); // Start with 0
         >
           {saving ? "Speichern..." : "Antworten speichern"}
         </Button>
-        {saveSuccess && <div className="text-green-600 mt-2">Antworten gespeichert!</div>}
-        {saveError && <div className="text-red-600 mt-2">{saveError}</div>}
+        {saveSuccess && <div className="text-green-600 text-center mt-2">Antworten gespeichert!</div>}
+        {saveError && <div className="text-red-600 text-center mt-2">{saveError}</div>}
       </div>
     </div>
     </div>
