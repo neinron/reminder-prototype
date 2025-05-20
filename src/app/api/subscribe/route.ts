@@ -18,36 +18,54 @@ export async function POST(req: NextRequest) {
       return NextResponse.json({ error: "No IP found" }, { status: 400 });
     }
 
+    // Cache für Geo-Daten
+    const geoCache = new Map<string, any>();
+    
     // Hole Geo-Daten
-    let geo = null;
-    try {
-      // Verwende API Key, wenn vorhanden
-      const apiKey = process.env.NEXT_PUBLIC_IPAPI_KEY;
-      const geoUrl = apiKey ? `https://api.ipapi.com/${ip}?access_key=${apiKey}` : `https://ipapi.co/${ip}/json/`;
-      
-      const geoRes = await fetch(geoUrl, {
-        headers: {
-          'Accept': 'application/json'
+    let geo = geoCache.get(ip);
+    if (!geo) {
+      try {
+        // Verwende API Key, wenn vorhanden
+        const apiKey = process.env.NEXT_PUBLIC_IPAPI_KEY;
+        const geoUrl = apiKey ? `https://api.ipapi.com/${ip}?access_key=${apiKey}` : `https://ipapi.co/${ip}/json/`;
+        
+        const geoRes = await fetch(geoUrl, {
+          headers: {
+            'Accept': 'application/json'
+          }
+        });
+        
+        if (!geoRes.ok) {
+          console.error('GeoIP API error:', await geoRes.text());
+          // Fallback: Verwende leere Geo-Daten statt Fehler
+          geo = {
+            city: null,
+            region: null,
+            country: null,
+            lat: null,
+            lon: null
+          };
+        } else {
+          const geoData = await geoRes.json();
+          geo = {
+            city: geoData.city,
+            region: geoData.region,
+            country: geoData.country_name,
+            lat: geoData.latitude,
+            lon: geoData.longitude
+          };
+          geoCache.set(ip, geo); // Cache die Daten
         }
-      });
-      
-      if (!geoRes.ok) {
-        console.error('GeoIP API error:', await geoRes.text());
-        return NextResponse.json({ error: 'GeoIP lookup failed' }, { status: 500 });
+      } catch (e) {
+        console.error('Error getting geo data:', e);
+        geo = {
+          city: null,
+          region: null,
+          country: null,
+          lat: null,
+          lon: null
+        };
       }
-
-      const geoData = await geoRes.json();
-      geo = {
-        city: geoData.city,
-        region: geoData.region,
-        country: geoData.country_name,
-        lat: geoData.latitude,
-        lon: geoData.longitude
-      };
-
-      console.log('Geo data:', geo);
-    } catch (e) {
-      console.error('Error getting geo data:', e);
     }
 
     const updateData = {
