@@ -30,35 +30,35 @@ export default function RootLayout({
         <meta property="og:description" content="Nie wieder Strafzettel! Lass dich per SMS oder WhatsApp rechtzeitig an das Ende deiner Parkzeit erinnern!" />
         <meta property="og:image" content="/wemolo-meta.png" />
         <meta property="og:type" content="website" />
-        <meta property="og:url" content="https://wemolo-reminders.vercel.app" />
+        <meta property="og:url" content="https://reminder.wemolo.com" />
       </head>
       <body
         className={`${albertSans.variable} font-sans antialiased min-h-screen flex flex-col`}
       >
-        <div className="pt-8 pl-6">
+        <div className="flex items-center justify-between w-full px-6">
           <Link href="/">
             <img src="/logo-wemolo-black@4x.png" alt="Wemolo Logo" style={{height: "auto", width: 200, cursor: 'pointer'}} />
           </Link>
+          <img src="/DEKRA Standard.png" alt="DEKRA" style={{height: 130, width: "auto"}} />
         </div>
-        <div className="flex-1 w-full mt-2">{children}</div>
+        <div className="flex-1 w-full">{children}</div>
         <footer className="w-full h-[149px] bg-black flex flex-col justify-between px-6 py-4">
-  <div className="relative flex items-start w-full h-full">
-    {/* Logo links oben */}
-    <div className="flex flex-col z-10">
-      <a href="/">
-        <img src="/logo-wemolo-white@4x.png" alt="Wemolo Logo" style={{height: "auto", width: 124, marginBottom: 16, cursor: 'pointer'}} />
-      </a>
-      <span className="text-xs text-white mt-10 block"> 2025 Wemolo GmbH</span>
-    </div>
-    {/* Links exakt zentriert im Footer */}
-    <div className="absolute left-1/2 top-[40%] -translate-x-1/2 -translate-y-[40%] flex flex-row items-center justify-center gap-4 px-2">
-      <a href="/impressum" className="text-xs text-white hover:text-gray-300 transition-colors px-2">Impressum</a>
-      <a href="/datenschutz" className="text-xs text-white hover:text-gray-300 transition-colors px-2">Datenschutz</a>
-    </div>
-    {/* Rechts bleibt leer, für optische Balance */}
-    <div className="flex-1" />
-  </div>
-</footer>
+          <div className="flex flex-col items-center">
+            {/* Logo links oben */}
+            <div className="flex flex-col items-center z-10 mt-4">
+              <a href="/">
+                <img src="/logo-wemolo-white@4x.png" alt="Wemolo Logo" style={{height: "auto", width: 170, marginBottom: 16, cursor: 'pointer'}} />
+              </a>
+              <span className="text-xs text-white mb-0"> 2025 Wemolo GmbH</span>
+            </div>
+          </div>
+          <div className="flex flex-col items-center w-full mt-4">
+            <div className="flex flex-row items-center justify-center gap-6">
+              <a href="/impressum" className="text-xs text-white hover:text-gray-300 transition-colors px-2 mb-6">Impressum</a>
+              <a href="/datenschutz" className="text-xs text-white hover:text-gray-300 transition-colors px-2 mb-6">Datenschutz</a>
+            </div>
+          </div>
+        </footer>
       </body>
     </html>
   );

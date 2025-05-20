@@ -48,7 +48,7 @@ export const LicensePlateInput = React.forwardRef<HTMLInputElement, LicensePlate
 
     // Dynamically calculate dynamic input widths based on content
     const chUnitPx = 0.55 * inputHeight; // empirically, 1ch ≈ 0.62*height at 3rem
-    const minCityCh = 1.8;
+    const minCityCh = 2;
     const maxCityCh = 3.8;
     const minRestCh = 6.7;
     const maxRestCh = 8;

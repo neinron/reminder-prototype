@@ -23,7 +23,7 @@ export default function SliderMarksDemo({ labels, thumbSizePx = 24, ...sliderPro
           return (
             <span
               key={label}
-              className="absolute flex items-center justify-center px-2 py-0.5 bg-white rounded text-xs"
+              className="absolute flex items-center justify-center px-2 py-0.5 bg-white rounded text-sm"
               style={{
                 left: `${left}%`,
                 transform: "translateX(-50%)",

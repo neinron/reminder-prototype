@@ -74,6 +74,7 @@ const [perUseLabel, setPerUseLabel] = useState(perUseLabels[1]); // Start with 0
 
     if (res.ok) {
       setSuccess(true);
+      window.scrollTo(0, 0);
     } else {
       setError("Irgendwas lief schief. Bitte versuch es erneut.");
     }
@@ -83,7 +84,7 @@ const [perUseLabel, setPerUseLabel] = useState(perUseLabels[1]); // Start with 0
   // --- Pre-Submit-Ansicht (Formular, Hinweise etc.) ---
   const PreSubmitContent = (
     <form onSubmit={handleSubmit} className="space-y-6">
-      <div className="flex flex-col gap-2 mt-[-10px] mb-4">
+      <div className="flex flex-col gap-2 mt-[-12px] mb-4">
         <div className="flex flex-row items-center gap-5">
           <Check className="text-[#5046e8]" size={24} />
           <span className="text-base font-medium text-muted-foreground text-left w-full block">Trage dein Kennzeichen und deine Kontaktdaten ein.</span>
@@ -94,10 +95,10 @@ const [perUseLabel, setPerUseLabel] = useState(perUseLabels[1]); // Start with 0
         </div>
         <div className="flex flex-row items-center gap-5">
           <PartyPopper className="text-[#5046e8]" size={24} />
-          <span className="text-base font-medium text-muted-foreground text-left w-full block">Du kannst du rechtzeitig ausfahren und Strafzettel vermeiden!</span>
+          <span className="text-base font-medium text-muted-foreground text-left w-full block">Du kannst du rechtzeitig vom Parkplatz fahren und Strafzettel vermeiden!</span>
         </div>
       </div>
-      <label htmlFor="plate" className="block font-bold mb-2">
+      <label htmlFor="plate" className="block text-base font-semibold mb-2">
         Kennzeichen
       </label>
       <div className="flex justify-center">
@@ -105,11 +106,11 @@ const [perUseLabel, setPerUseLabel] = useState(perUseLabels[1]); // Start with 0
           id="plate"
           value={plate}
           onChange={e => setPlate(e.target.value)}
-          className="w-full mb-0"
+          className="w-full mb-2"
           required
         />
       </div>
-      <label htmlFor="name" className="block font-bold mb-2 mt-[-8px]">
+      <label htmlFor="name" className="block text-base font-semibold mt-[-12px] mb-2">
         Name
       </label>
       <Input
@@ -118,10 +119,10 @@ const [perUseLabel, setPerUseLabel] = useState(perUseLabels[1]); // Start with 0
         placeholder="z.B. Max Mustermann"
         value={nameValue}
         onChange={e => setNameValue(e.target.value)}
-        className="w-full mb-0"
+        className="w-full mb-2"
         autoComplete="name"
       />
-      <label htmlFor="contact" className="block font-bold mb-2 mt-4">
+      <label htmlFor="contact" className="block text-base  font-semibold mb-2">
         Telefonnummer
       </label>
       <Input
@@ -201,36 +202,33 @@ const [perUseLabel, setPerUseLabel] = useState(perUseLabels[1]); // Start with 0
         Wir benachrichtigen dich, sobald der Service zu den Erinnerungen bereit ist.
       </div>
       <div className="border-b border-gray-300 my-4"></div>
-      <div className="text-base font-medium text-primary mb-2">
-        Wir möchten gerne wissen, wie du den Service nutzen würdest und was für dabei wichtig ist. Bitte fülle die folgenden Fragen aus:
-      </div>
       <div className="mt-4 space-y-6">
         {/* 1. Main benefit */}
         <div>
-          <div className="font-base font-medium mb-2">
-            Was wäre für dich der größte Nutzen dieses Services?
+          <div className="font-base font-semibold mb-2">
+            Was würde dir dieser Service am meisten helfen?
           </div>
           <div className="flex flex-col gap-2">
             <div className="flex items-center gap-4 mt-2">
               <Checkbox id="benefit-stress" checked={benefit.includes('stress')} onCheckedChange={checked => setBenefit(v => checked ? [...v, 'stress'] : v.filter((b: string) => b !== 'stress'))} />
-              <label htmlFor="benefit-stress" className="text-sm font-normal leading-none">Ich spare mir Stress</label>
+              <label htmlFor="benefit-stress" className="text-base font-medium  leading-none">Weniger Stress beim Einkaufen</label>
             </div>
             <div className="flex items-center gap-4 mt-2">
               <Checkbox id="benefit-fee" checked={benefit.includes('fee')} onCheckedChange={checked => setBenefit(v => checked ? [...v, 'fee'] : v.filter((b: string) => b !== 'fee'))} />
-              <label htmlFor="benefit-fee" className="text-sm font-normal leading-none">Ich vermeide Strafgebühren</label>
+              <label htmlFor="benefit-fee" className="text-base font-medium leading-none">Keine Strafzettel mehr</label>
             </div>
             <div className="flex items-center gap-4 mt-2">
               <Checkbox id="benefit-shopping" checked={benefit.includes('shopping')} onCheckedChange={checked => setBenefit(v => checked ? [...v, 'shopping'] : v.filter( (b: string) => b !== 'shopping'))} />
-              <label htmlFor="benefit-shopping" className="text-sm font-normal leading-none">Ich kann länger einkaufen</label>
+              <label htmlFor="benefit-shopping" className="text-base font-medium leading-none">Mehr Zeit zum Einkaufen</label>
             </div>
             <div className="flex items-center gap-4 mt-2">
               <Checkbox id="benefit-other" checked={benefit.includes('other')} onCheckedChange={checked => setBenefit(v => checked ? [...v, 'other'] : v.filter((b: string) => b !== 'other'))} />
-              <label htmlFor="benefit-other" className="text-sm font-normal leading-none">Etwas anderes …</label>
+              <label htmlFor="benefit-other" className="text-base font-medium leading-none">Etwas anderes …</label>
             </div>
             {benefit.includes('other') && (
               <Input
                 type="text"
-                placeholder="Beschreibe hier deinen größten Nutzen"
+                placeholder="Gib hier deinen eigenen Vorteil ein …"
                 value={benefitOther}
                 onChange={e => setBenefitOther(e.target.value)}
                 className="w-full mt-2 text-sm font-normal"
@@ -240,11 +238,11 @@ const [perUseLabel, setPerUseLabel] = useState(perUseLabels[1]); // Start with 0
         </div>
         {/* 2. Reminder lead time */}
         <div>
-          <div className="font-base font-medium mb-4">
-            Wie viele Minuten vor Ablauf deiner Gratis-Parkzeit würdest du am liebsten erinnert werden?
+          <div className="font-base font-semibold mb-5">
+         <span className="font-semibold">Wann möchtest du erinnert werden?</span> <span className="font-normal">(Minuten vor Ablauf der Gratis-Parkzeit)</span>
           </div>
           <div className="w-full flex justify-center">
-            <div className="w-full flex flex-col items-center mb-0">
+            <div className="w-9/10 flex flex-col items-center mb-0">
               <SliderMarksDemo
                 defaultValue={[reminderLabels.indexOf(reminderLabel)]}
                 max={reminderLabels.length - 1}
@@ -258,14 +256,10 @@ const [perUseLabel, setPerUseLabel] = useState(perUseLabels[1]); // Start with 0
         </div>
         {/* 3. Monthly subscription willingness */}
         <div>
-          <div className="font-base font-normal mb-2">
-          Stell dir vor, du kannst mit diesem Feature mehrere Parkverstöße (40€/Strafzettel) ersparen.
-          </div>
-          <div className="font-base font-medium mb-4">
-          Wie viel wäre dir das monatlich wert?
-          </div>
+          <div className="font-base mb-5">
+          <span className="font-semibold"> Was wäre dir das Feature im Monat wert,</span> <span className="font-normal">wenn du dir dadurch mehrere Strafzettel (je 40€) sparst?</span></div>
           <div className="w-full flex justify-center">
-          <div className="w-full flex flex-col items-center mb-4">
+          <div className="w-9/10 flex flex-col items-center mb-4">
               <SliderMarksDemo
                 defaultValue={[monthlyLabels.indexOf(monthlyLabel)]}
                 max={monthlyLabels.length - 1}
@@ -278,11 +272,11 @@ const [perUseLabel, setPerUseLabel] = useState(perUseLabels[1]); // Start with 0
         </div>
         {/* 4. Pay-per-use willingness */}
         <div>
-          <div className="font-base font-medium mb-4">
-            Falls du lieber pro Erinnerung zahlen würdest: Welcher Preis pro Reminder wäre für Sie akzeptabel?
+          <div className="font-base mb-5">
+          <span className="font-semibold">Oder lieber pro Erinnerung zahlen?</span> <span className="font-normal">Was wäre ein fairer Preis pro Erinnerung?</span>
           </div>
           <div className="w-full flex justify-center">
-          <div className="w-full flex flex-col items-center">
+          <div className="w-9/10 flex flex-col items-center">
               <SliderMarksDemo
                 defaultValue={[perUseLabels.indexOf(perUseLabel)]}
                 max={perUseLabels.length - 1}
@@ -297,7 +291,7 @@ const [perUseLabel, setPerUseLabel] = useState(perUseLabels[1]); // Start with 0
         {/* Save Button */}
         <Button
           type="button"
-          className="w-full bg-[#5046e8] hover:bg-[#5046e8] rounded-full font-semibold mt-6"
+          className="w-full bg-[#5046e8] hover:bg-[#5046e8] rounded-full text-base font-semibold mt-8"
           onClick={async () => {
             setSaving(true);
             setSaveSuccess(false);
@@ -339,12 +333,12 @@ const [perUseLabel, setPerUseLabel] = useState(perUseLabels[1]); // Start with 0
   return (
     <main className="flex min-h-screen bg-background pt-0">
       <div className="flex flex-col items-center w-full mt-0">
-        <Card className="w-full max-w-lg mb-4">
+        <Card className="w-full max-w-lg mb-4 py-0">
           {!success && (
-            <CardHeader>
+            <CardHeader className="pt-0">
               
-              <CardTitle className="text-2xl text-left">
-                Wie du nie wieder einen Strafzettel bekommst:
+              <CardTitle className="text-2xl text-left mb-0">
+                So funktioniert es:
               </CardTitle>
             </CardHeader>
           )}
