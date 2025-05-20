@@ -335,10 +335,10 @@ const [perUseLabel, setPerUseLabel] = useState(perUseLabels[1]); // Start with 0
       <div className="flex flex-col items-center w-full mt-0">
         <Card className="w-full max-w-lg mb-4 py-0">
           {!success && (
-            <CardHeader className="pt-0">
+            <CardHeader className="pt-2">
               
               <CardTitle className="text-2xl text-left mb-0">
-                So funktioniert es:
+                So funktioniert der Service:
               </CardTitle>
             </CardHeader>
           )}
