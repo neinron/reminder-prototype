@@ -91,11 +91,11 @@ const [perUseLabel, setPerUseLabel] = useState(perUseLabels[1]); // Start with 1
         </div>
         <div className="flex flex-row items-center gap-5">
           <Bell className="text-[#5046e8]" size={24} />
-          <span className="text-base font-medium text-muted-foreground text-left w-full block">Wir erinnern dich per Nachricht 15 Minuten vor Ablauf deiner Parkzeit.</span>
+          <span className="text-base font-medium text-muted-foreground text-left w-full block">Wir können dich 15 Minuten vor Ablauf deiner Gratis-Parkzeit erinnern.</span>
         </div>
         <div className="flex flex-row items-center gap-5">
           <PartyPopper className="text-[#5046e8]" size={24} />
-          <span className="text-base font-medium text-muted-foreground text-left w-full block">Du kannst du rechtzeitig vom Parkplatz fahren und Strafzettel vermeiden!</span>
+          <span className="text-base font-medium text-muted-foreground text-left w-full block">Du kannst rechtzeitig vom Parkplatz fahren und Strafzettel vermeiden!</span>
         </div>
       </div>
       <label htmlFor="plate" className="block text-base font-semibold mb-2">
@@ -188,7 +188,7 @@ const [perUseLabel, setPerUseLabel] = useState(perUseLabels[1]); // Start with 1
         {submitting ? "Wird gesendet..." : "Zur Warteliste anmelden"}
       </Button>
       <div className="text-xs text-left text-yellow-700 bg-yellow-50 rounded px-3 py-2 mt-0">
-        <strong>Hinweis:</strong> Der Service ist aktuell in der Testphase – es werden noch keine Erinnerungen verschickt. Wir informieren dich, sobald es Neuigkeiten gibt. Deine Daten verwenden wir ausschließlich für diesen Test. Mehr dazu in unserer <a href="/datenschutz" className="underline" target="_blank">Datenschutzerklärung</a>.
+        <strong>Hinweis:</strong> Der Service ist aktuell in der Testphase, in der wir nur das Interesse an dem Service messen. Es werden noch keine Erinnerungen verschickt. Wir informieren dich, sobald es Neuigkeiten gibt. Deine Daten verwenden wir ausschließlich für diesen Test. Mehr dazu in unserer <a href="/datenschutz" className="underline" target="_blank">Datenschutzerklärung</a>.
       </div>
     </form>
   );
