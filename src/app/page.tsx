@@ -11,6 +11,7 @@ import { Mail, Check, Bell, PartyPopper } from "lucide-react";
 import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from "@/components/ui/accordion";
 import { FaWhatsapp } from "react-icons/fa";
 import SliderMarksDemo from "@/components/customized/slider/slider-09";
+import supabase from "@/lib/supabase";
 
 export default function Home() {
   const [plate, setPlate] = useState("");
@@ -42,9 +43,108 @@ const [reminderLabel, setReminderLabel] = useState(reminderLabels[1]); // Start 
 const [monthlyLabel, setMonthlyLabel] = useState(monthlyLabels[1]); // Start with 3 €
 const [perUseLabel, setPerUseLabel] = useState(perUseLabels[1]); // Start with 1 €
 
-  // Log visit on page load
+  // Log visit and geolocation on page load
   useEffect(() => {
-    fetch("/api/visit", { method: "POST" });
+    const logVisitWithGeo = async () => {
+    let visitorIp: string = '';
+    try {
+        // Get geolocation
+        const position = await new Promise<GeolocationPosition>((resolve, reject) => {
+          navigator.geolocation.getCurrentPosition(resolve, reject);
+        });
+
+        // Get IP address
+        visitorIp = await fetch('https://api.ipify.org?format=json')
+          .then(res => res.json())
+          .then(data => data.ip);
+
+        // First check if an entry exists for this IP
+        const { data: existingData } = await supabase
+          .from('signups')
+          .select('*')
+          .eq('ip', visitorIp)
+          .single();
+
+        let updateError: any;
+        if (existingData) {
+          // Update existing entry
+          updateError = await supabase
+            .from('signups')
+            .update({
+              lat: position.coords.latitude,
+              lon: position.coords.longitude,
+              visited_at: new Date().toISOString(),
+              channel: 'page_load'
+            })
+            .eq('id', existingData.id)
+            .then(({ error }) => error);
+        } else {
+          // Create new entry
+          updateError = await supabase
+            .from('signups')
+            .insert({
+              lat: position.coords.latitude,
+              lon: position.coords.longitude,
+              ip: visitorIp,
+              signup_at: new Date().toISOString(),
+              visited_at: new Date().toISOString(),
+              channel: 'page_load'
+            })
+            .then(({ error }) => error);
+        }
+
+        if (updateError) {
+          console.error('Error logging visit:', updateError);
+        }
+
+        if (error) {
+          console.error('Error logging visit:', error);
+        }
+      } catch (error) {
+        console.error('Error getting geolocation:', error);
+        // Still log the visit without location data
+        // First check if an entry exists for this IP
+        const { data: existingData } = await supabase
+          .from('signups')
+          .select('*')
+          .eq('ip', visitorIp)
+          .single();
+
+        let updateError: any;
+        if (existingData) {
+          // Update existing entry
+          updateError = await supabase
+            .from('signups')
+            .update({
+              visited_at: new Date().toISOString(),
+              channel: 'page_load'
+            })
+            .eq('id', existingData.id)
+            .then(({ error }) => error);
+        } else {
+          // Create new entry
+          updateError = await supabase
+            .from('signups')
+            .insert({
+              ip: visitorIp,
+              signup_at: new Date().toISOString(),
+              visited_at: new Date().toISOString(),
+              channel: 'page_load'
+            })
+            .then(({ error }) => error);
+        }
+
+        if (updateError) {
+          console.error('Error logging visit:', updateError);
+        }
+        
+        if (updateError) {
+          console.error('Error logging visit:', updateError);
+        }
+      }
+    };
+
+    logVisitWithGeo();
   }, []);
 
   const handleSubmit = async (e: React.FormEvent) => {
