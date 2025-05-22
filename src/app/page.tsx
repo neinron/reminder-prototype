@@ -1,5 +1,5 @@
 "use client";
-import { useEffect, useState } from "react";
+import { useEffect, useState, useCallback } from "react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
@@ -8,25 +8,29 @@ import { Checkbox } from "@/components/ui/checkbox";
 import { LicensePlateInput } from "@/components/ui/input-licenseplate";
 import React from "react";
 import { Mail, Check, Bell, PartyPopper } from "lucide-react";
+
+// Set consistent icon colors
+const ICON_COLOR = "text-[#5046e8]";
 import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from "@/components/ui/accordion";
 import { FaWhatsapp } from "react-icons/fa";
 import SliderMarksDemo from "@/components/customized/slider/slider-09";
 import supabase from "@/lib/supabase";
-import { useFormData } from "@/lib/localStorage";
+
+
+// Storage key for UUID
+const VISITOR_UUID_KEY = 'visitor_uuid';
 
 export default function Home() {
-  const { formData, save: saveFormData } = useFormData();
-
-  // Initialize form state with saved data or defaults
-  const [plate, setPlate] = useState(formData?.plate || "");
-  const [city, setCity] = useState(formData?.city || "");
-  const [rest, setRest] = useState(formData?.rest || "");
-  const [contactValue, setContactValue] = useState(formData?.contactValue || "");
-  const [nameValue, setNameValue] = useState(formData?.nameValue || "");
-  const [smsSelected, setSmsSelected] = useState(formData?.smsSelected || false);
-  const [whatsappSelected, setWhatsappSelected] = useState(formData?.whatsappSelected || false);
-  const [benefit, setBenefit] = useState<string[]>(formData?.benefit || []);
-  const [benefitOther, setBenefitOther] = useState(formData?.benefitOther || "");
+  // Initialize form state with empty defaults
+  const [plate, setPlate] = useState("");
+  const [city, setCity] = useState("");
+  const [rest, setRest] = useState("");
+  const [contactValue, setContactValue] = useState("");
+  const [nameValue, setNameValue] = useState("");
+  const [smsSelected, setSmsSelected] = useState(false);
+  const [whatsappSelected, setWhatsappSelected] = useState(false);
+  const [benefit, setBenefit] = useState<string[]>([]);
+  const [benefitOther, setBenefitOther] = useState("");
   const [submitting, setSubmitting] = useState(false);
   const [success, setSuccess] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -34,6 +38,7 @@ export default function Home() {
   const [saving, setSaving] = useState(false);
   const [saveSuccess, setSaveSuccess] = useState(false);
   const [saveError, setSaveError] = useState<string | null>(null);
+  const [visitorUuid, setVisitorUuid] = useState<string | null>(null);
 
   // Labels für die Sliders
   const reminderLabels = ["5 min", "15 min", "25 min", "30 min"];
@@ -45,224 +50,123 @@ export default function Home() {
   const [monthlyLabel, setMonthlyLabel] = useState(monthlyLabels[1]); // Start with 3 €
   const [perUseLabel, setPerUseLabel] = useState(perUseLabels[1]); // Start with 1 €
 
-  // Save form data to localStorage whenever it changes
+  // Track visitor on mount
   useEffect(() => {
-    const formData = {
-      plate,
-      city,
-      rest,
-      contactValue,
-      nameValue,
-      smsSelected,
-      whatsappSelected,
-      benefit,
-      benefitOther
-    };
-    saveFormData(formData);
-  }, [plate, city, rest, contactValue, nameValue, smsSelected, whatsappSelected, benefit, benefitOther]);
-
-  // Log visit and geolocation on page load
-  useEffect(() => {
-    const logVisitWithGeo = async () => {
-      let visitorIp: string = '';
+    // Track visit immediately
+    async function trackVisit() {
       try {
-        // Get geolocation
-        const position = await new Promise<GeolocationPosition>((resolve, reject) => {
-          navigator.geolocation.getCurrentPosition(resolve, reject);
+        // First check localStorage
+        const storedUuid = localStorage.getItem(VISITOR_UUID_KEY);
+        if (storedUuid) {
+          // Check if entry exists in database
+          const checkResponse = await fetch('/api/visit/check', {
+            method: 'POST',
+            headers: {
+              'Content-Type': 'application/json',
+            },
+            body: JSON.stringify({ uniqueId: storedUuid })
+          });
+
+          if (!checkResponse.ok) {
+            // If check fails, create a new entry
+            const createResponse = await fetch('/api/visit', {
+              method: 'POST',
+              headers: {
+                'Content-Type': 'application/json',
+              },
+              body: JSON.stringify({ uniqueId: storedUuid })
+            });
+
+            if (!createResponse.ok) {
+              throw new Error('Failed to create visit entry');
+            }
+          }
+
+          // Use stored UUID
+          setVisitorUuid(storedUuid);
+          return;
+        }
+
+        // If no stored UUID, create a new one
+        const response = await fetch('/api/visit', {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+          },
         });
 
-        // Get IP address
-        visitorIp = await fetch('https://api.ipify.org?format=json')
-          .then(res => res.json())
-          .then(data => data.ip);
-
-        // First check if an entry exists for this IP
-        const { data: existingData, error: queryError } = await supabase
-          .from('signups')
-          .select('*')
-          .eq('ip', visitorIp);
-
-        if (queryError) {
-          console.error('Error querying existing data:', queryError);
-          return;
+        if (!response.ok) {
+          throw new Error('Failed to track visit');
         }
 
-        // If no existing entry, create one with status 'visited'
-        if (!existingData || existingData.length === 0) {
-          await supabase
-            .from('signups')
-            .insert({
-              ip: visitorIp,
-              visited_at: new Date().toISOString(),
-              status: 'visited'
-            });
-        } else {
-          // Update existing entry
-          await supabase
-            .from('signups')
-            .update({
-              visited_at: new Date().toISOString(),
-              status: 'visited'
-            })
-            .eq('id', existingData[0].id);
+        const data = await response.json();
+        if (data.uniqueId) {
+          localStorage.setItem(VISITOR_UUID_KEY, data.uniqueId);
+          setVisitorUuid(data.uniqueId);
         }
-
       } catch (error) {
-        console.error('Error getting geolocation:', error);
-        // Still log the visit without location data
-        // First check if an entry exists for this IP
-        const { data: existingData, error: queryError } = await supabase
-          .from('signups')
-          .select('*')
-          .eq('ip', visitorIp);
-
-        if (queryError) {
-          console.error('Error querying existing data:', queryError);
-          return;
-        }
-
-        // If no existing entry, create one with status 'visited'
-        if (!existingData || existingData.length === 0) {
-          await supabase
-            .from('signups')
-            .insert({
-              ip: visitorIp,
-              visited_at: new Date().toISOString(),
-              status: 'visited'
-            });
-        } else {
-          // Update existing entry
-          await supabase
-            .from('signups')
-            .update({
-              visited_at: new Date().toISOString(),
-              status: 'visited'
-            })
-            .eq('id', existingData[0].id);
-        }
+        console.error('Error tracking visit:', error);
       }
-    };
+    }
 
-    logVisitWithGeo();
-  }, []);
+    trackVisit();
+  }, []); // Empty dependency array since we only want to run this once on mount
 
+
+
+  // Handle form submission
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setSubmitting(true);
     setError(null);
 
     try {
-      // Get user's IP address
-      const visitorIp = await fetch('https://api.ipify.org?format=json')
-        .then(res => res.json())
-        .then(data => data.ip);
-
-      // Get existing entry
-      const { data: existingData, error: queryError } = await supabase
-        .from('signups')
-        .select('*')
-        .eq('ip', visitorIp);
-
-      if (queryError) {
-        console.error('Error querying existing data:', queryError);
-        throw queryError;
+      if (!visitorUuid) {
+        throw new Error('No visitor UUID available');
       }
 
-      // If no existing entry, create one
-      let entryId;
-      if (!existingData || existingData.length === 0) {
-        const { data: createdData, error: insertError } = await supabase
-          .from('signups')
-          .insert({
-            ip: visitorIp,
-            signup_at: new Date().toISOString(),
-            visited_at: new Date().toISOString(),
-            status: 'joined_waiting_list',
-            channel: smsSelected && whatsappSelected ? "sms+whatsapp" : smsSelected ? "sms" : whatsappSelected ? "whatsapp" : "",
-            plate: city && rest ? `${city}-${rest}` : plate,
-            phone: contactValue,
-            name: nameValue
-          })
-          .select('id')
-          .single();
-
-        if (insertError) {
-          throw insertError;
-        }
-        entryId = createdData.id;
-      } else {
-        entryId = existingData[0].id;
-      }
-
-      // Update the entry with form data
-      const updateError = await supabase
-        .from('signups')
-        .update({
-          plate: city && rest ? `${city}-${rest}` : plate,
-          channel: smsSelected && whatsappSelected ? "sms+whatsapp" : smsSelected ? "sms" : whatsappSelected ? "whatsapp" : "",
+      const response = await fetch('/api/subscribe', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          plate,
+          channel: smsSelected ? 'sms' : whatsappSelected ? 'whatsapp' : null,
           phone: contactValue,
           name: nameValue,
-          signup_at: new Date().toISOString(),
-          visited_at: new Date().toISOString(),
-          status: 'joined_waiting_list'
-        })
-        .eq('id', entryId)
-        .then(({ error }) => error);
+          uniqueId: visitorUuid
+        }),
+      });
 
-      if (updateError) {
-        throw updateError;
-      }
-
-      // Update status to joined+feedback
-      const feedbackError = await supabase
-        .from('signups')
-        .update({
-          status: 'joined+feedback'
-        })
-        .eq('id', entryId)
-        .then(({ error }) => error);
-
-      if (feedbackError) {
-        throw feedbackError;
+      if (!response.ok) {
+        throw new Error('Failed to submit form');
       }
 
       setSuccess(true);
-      window.scrollTo(0, 0);
-      // Clear form data from localStorage after successful submission
-      const formData = new FormData();
-      formData.append('plate', plate);
-      formData.append('city', city);
-      formData.append('rest', rest);
-      formData.append('contactValue', contactValue);
-      formData.append('nameValue', nameValue);
-      formData.append('smsSelected', smsSelected ? 'true' : 'false');
-      formData.append('whatsappSelected', whatsappSelected ? 'true' : 'false');
-      formData.append('benefit', JSON.stringify(benefit));
-      formData.append('benefitOther', benefitOther);
-      saveFormData(formData);
-
+      setSubmitting(false);
     } catch (error) {
-      console.error('Error updating form data:', error);
-      setError("Irgendwas lief schief. Bitte versuch es erneut.");
-    } finally {
+      setError('Ein Fehler ist aufgetreten. Bitte versuchen Sie es erneut.');
       setSubmitting(false);
     }
   };
+
+
 
   // --- Pre-Submit-Ansicht (Formular, Hinweise etc.) ---
   const PreSubmitContent = (
     <form onSubmit={handleSubmit} className="space-y-6">
       <div className="flex flex-col gap-2 mt-[-12px] mb-4">
         <div className="flex flex-row items-center gap-5">
-          <Check className="text-[#5046e8]" size={24} />
+          <Check className={ICON_COLOR} size={24} />
           <span className="text-base font-medium text-muted-foreground text-left w-full block">Trage dein Kennzeichen und deine Kontaktdaten ein.</span>
         </div>
         <div className="flex flex-row items-center gap-5">
-          <Bell className="text-[#5046e8]" size={24} />
+          <Bell className={ICON_COLOR} size={24} />
           <span className="text-base font-medium text-muted-foreground text-left w-full block">Wir können dich 15 Minuten vor Ablauf deiner Gratis-Parkzeit erinnern.</span>
         </div>
         <div className="flex flex-row items-center gap-5">
-          <PartyPopper className="text-[#5046e8]" size={24} />
+          <PartyPopper className={ICON_COLOR} size={24} />
           <span className="text-base font-medium text-muted-foreground text-left w-full block">Du kannst rechtzeitig vom Parkplatz fahren und Strafzettel vermeiden!</span>
         </div>
       </div>
@@ -308,12 +212,12 @@ export default function Home() {
           type="button"
           variant="outline"
           onClick={() => setSmsSelected((v: boolean) => !v)}
-          className={
-            (smsSelected
+          className={`
+            ${smsSelected
               ? "bg-[#5046e8] border-2 border-[#5046e8] text-white"
-              : "bg-white border-2 border-black text-black") +
-            " flex-1 min-w-0 px-3 py-2 rounded-full font-semibold"
-          }
+              : "bg-white border-2 border-black text-black"}
+            flex-1 min-w-0 px-3 py-2 rounded-full font-semibold
+          `}
         >
           <Mail
             className={`inline mr-1 align-text-bottom text-${smsSelected ? 'white' : 'black'}`}
@@ -325,17 +229,16 @@ export default function Home() {
           type="button"
           variant="outline"
           onClick={() => setWhatsappSelected((v: boolean) => !v)}
-          className={
-            (whatsappSelected
+          className={`
+            ${whatsappSelected
               ? "bg-[#5046e8] border-2 border-[#5046e8] text-white"
-              : "bg-white border-2 border-black text-black") +
-            " flex-1 min-w-0 px-3 py-2 rounded-full font-semibold"
-          }
+              : "bg-white border-2 border-black text-black"}
+            flex-1 min-w-0 px-3 py-2 rounded-full font-semibold
+          `}
         >
           <FaWhatsapp
-            className="inline mr-1 text-lg align-text-bottom font-semibold"
+            className={`inline mr-1 text-lg align-text-bottom font-semibold text-${whatsappSelected ? 'white' : 'black'}`}
             size={20}
-            color={whatsappSelected ? "white" : "black"}
           />
           WhatsApp
         </Button>
@@ -464,22 +367,33 @@ export default function Home() {
             setSaveSuccess(false);
             setSaveError(null);
             try {
-              const res = await fetch("/api/feedback", {
-                method: "POST",
-                headers: { "Content-Type": "application/json" },
-                body: JSON.stringify({
-                  monthlyValue: monthlyLabel,
-                  perUseValue: perUseLabel,
-                  reminderLead: reminderLabel,
-                  benefit,
-                  benefitOther,
-                }),
-              });
-              if (res.ok) {
-                setSaveSuccess(true);
-              } else {
-                setSaveError("Fehler beim Speichern.");
-              }
+                const res = await fetch("/api/feedback", {
+                  method: "POST",
+                  headers: { "Content-Type": "application/json" },
+                  body: JSON.stringify({
+                    uniqueId: visitorUuid, // Add uniqueId to link feedback to user
+                    monthlyValue: monthlyLabel,
+                    perUseValue: perUseLabel,
+                    reminderLead: reminderLabel,
+                    benefit,
+                    benefitOther,
+                  }),
+                });
+
+                // Handle 204 responses (no content)
+                if (res.status === 204) {
+                  setSaveSuccess(true);
+                  return;
+                }
+
+                const data = await res.json();
+                console.log('Feedback response:', data);
+
+                if (res.ok) {
+                  setSaveSuccess(true);
+                } else {
+                  setSaveError(data.error || "Fehler beim Speichern.");
+                }
             } catch {
               setSaveError("Fehler beim Speichern.");
             }

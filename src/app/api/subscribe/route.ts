@@ -1,107 +1,270 @@
 // src/app/api/subscribe/route.ts
 import { NextRequest, NextResponse } from "next/server";
 import supabase from "@/lib/supabase";
+import { v4 as uuidv4 } from 'uuid';
 
 export async function POST(req: NextRequest) {
   try {
-    const data = await req.json();
-    const { plate, channel, phone, name } = data;
-
-    // Hole IP aus Header
-    const ip = req.headers.get("x-forwarded-for")?.split(",")[0]?.trim()
-      || req.headers.get("x-real-ip")
-      || req.headers.get("cf-connecting-ip")
-      || null;
-
-    if (!ip) {
-      console.error('No IP found');
-      return NextResponse.json({ error: "No IP found" }, { status: 400 });
-    }
-
-    // Cache für Geo-Daten
-    const geoCache = new Map<string, any>();
+    console.log('Subscribe endpoint called - Processing form submission');
     
-    // Hole Geo-Daten
-    let geo = geoCache.get(ip);
-    if (!geo) {
-      try {
-        // Verwende API Key, wenn vorhanden
-        const apiKey = process.env.NEXT_PUBLIC_IPAPI_KEY;
-        const geoUrl = apiKey ? `https://api.ipapi.com/${ip}?access_key=${apiKey}` : `https://ipapi.co/${ip}/json/`;
-        
-        const geoRes = await fetch(geoUrl, {
-          headers: {
-            'Accept': 'application/json'
-          }
-        });
-        
-        if (!geoRes.ok) {
-          console.error('GeoIP API error:', await geoRes.text());
-          // Fallback: Verwende leere Geo-Daten statt Fehler
-          geo = {
-            city: null,
-            region: null,
-            country: null,
-            lat: null,
-            lon: null
-          };
-        } else {
-          const geoData = await geoRes.json();
-          geo = {
-            city: geoData.city,
-            region: geoData.region,
-            country: geoData.country_name,
-            lat: geoData.latitude,
-            lon: geoData.longitude
-          };
-          geoCache.set(ip, geo); // Cache die Daten
-        }
-      } catch (e) {
-        console.error('Error getting geo data:', e);
-        geo = {
-          city: null,
-          region: null,
-          country: null,
-          lat: null,
-          lon: null
-        };
-      }
+    const data = await req.json();
+    const { plate, channel, phone, name, uniqueId } = data;
+
+    console.log('Received form submission data:', {
+      plate,
+      channel,
+      phone,
+      name,
+      uniqueId
+    });
+
+    // Always require uniqueId from the request
+    if (!uniqueId) {
+      return NextResponse.json(
+        { error: 'No uniqueId provided' },
+        { status: 400 }
+      );
     }
 
+    const finalUniqueId = uniqueId;
+
+    // Check if this exact combination already exists
+    const { data: existing, error: queryError } = await supabase
+      .from("signups")
+      .select("*")
+      .eq("plate", plate)
+      .eq("phone", phone)
+      .eq("name", name)
+      .eq("status", "joined_waiting_list")
+      .maybeSingle();
+
+    if (queryError) {
+      console.error('Error querying existing entry:', queryError);
+      return NextResponse.json({ error: "Database query error" }, { status: 500 });
+    }
+
+    // If this exact combination exists, return success with a message
+    if (existing) {
+      console.log('Entry with same plate/phone/name already exists');
+      return NextResponse.json(
+        { 
+          success: true,
+          message: 'Sie haben sich bereits mit diesen Daten angemeldet.',
+          uniqueId: existing.unique_id
+        },
+        { status: 200 }
+      );
+    }
+
+    // Check if we have an existing entry with this UUID
+    const { data: existingUuid, error: queryErrorUuid } = await supabase
+      .from("signups")
+      .select("*")
+      .eq("unique_id", uniqueId)
+      .single();
+
+    if (queryErrorUuid) {
+      console.error('Error querying existing entry:', queryErrorUuid);
+      return NextResponse.json({ error: "Database query error" }, { status: 500 });
+    }
+
+    // If we have an existing entry with this UUID and it's not feedback, create new entry
+    if (existingUuid && existingUuid.status !== 'joined+feedback') {
+      const newUniqueId = uuidv4();
+      console.log('Creating new entry with UUID:', newUniqueId);
+
+      // Create new entry
+      const updateData = {
+        unique_id: newUniqueId,
+        plate,
+        channel,
+        phone,
+        name,
+        signup_at: new Date(),
+        status: 'joined_waiting_list'
+      };
+
+      const { error: insertError } = await supabase
+        .from("signups")
+        .insert([updateData]);
+
+      if (insertError) {
+        console.error('Error creating new entry:', insertError);
+        return NextResponse.json({ error: "Failed to create new entry" }, { status: 500 });
+      }
+
+      console.log('Successfully created new entry for plate:', plate);
+      return NextResponse.json({ 
+        success: true, 
+        uniqueId: newUniqueId,
+        needsLocalStorageUpdate: true
+      });
+    }
+
+    // Check for existing feedback entry with same plate, phone, name, and channel
+    const { data: feedbackEntry, error: feedbackError } = await supabase
+      .from("signups")
+      .select("*")
+      .eq("plate", plate)
+      .eq("phone", phone)
+      .eq("name", name)
+      .eq("channel", channel)
+      .eq("status", "joined+feedback")
+      .maybeSingle();
+
+    if (feedbackError) {
+      console.error('Error checking for feedback entry:', feedbackError);
+      return NextResponse.json({ error: "Database query error" }, { status: 500 });
+    }
+
+    // If no existing entry, create new one with new UUID
+    if (!feedbackEntry) {
+      // Get existing entry by UUID with full data
+      const { data: existingUuid, error: queryErrorUuid } = await supabase
+        .from("signups")
+        .select("*")
+        .eq("unique_id", uniqueId)
+        .single();
+
+      if (queryErrorUuid) {
+        console.error('Error querying existing entry:', queryErrorUuid);
+        return NextResponse.json({ error: "Database query error" }, { status: 500 });
+      }
+
+      if (!existingUuid) {
+        const newUniqueId = uuidv4();
+        console.log('Creating new entry with UUID:', newUniqueId);
+
+        // Create new entry
+        const updateData = {
+          unique_id: newUniqueId,
+          plate,
+          channel,
+          phone,
+          name,
+          signup_at: new Date(),
+          status: 'joined_waiting_list'
+        };
+
+        const { error: insertError } = await supabase
+          .from("signups")
+          .insert([updateData]);
+
+        if (insertError) {
+          console.error('Error creating new entry:', insertError);
+          return NextResponse.json({ error: "Failed to create new entry" }, { status: 500 });
+        }
+
+        console.log('Successfully created new entry for plate:', plate);
+        return NextResponse.json({ 
+          success: true, 
+          uniqueId: newUniqueId,
+          needsLocalStorageUpdate: true // Indicate that localStorage needs to be updated
+        });
+      }
+
+      // Check if entry already has feedback status
+      if (existingUuid.status === 'joined+feedback') {
+        console.log('Entry already has feedback status, cannot update');
+        return NextResponse.json(
+          { error: 'Entry already has feedback status' },
+          { status: 403 }
+        );
+      }
+
+      // Update existing entry
+      const updateData = {
+        plate,
+        channel,
+        phone,
+        name,
+        signup_at: existingUuid.signup_at || new Date(), // Keep original signup_at if exists
+        status: 'joined_waiting_list'
+      };
+
+      // Perform the update with proper error handling
+      const { data: updated, error: updateError } = await supabase
+        .from("signups")
+        .update(updateData)
+        .eq("unique_id", uniqueId)
+        .select()
+        .single();
+
+      if (updateError) {
+        console.error('Error updating existing entry:', updateError);
+        return NextResponse.json({ error: "Failed to update existing entry" }, { status: 500 });
+      }
+
+      console.log('Successfully updated entry for UUID:', uniqueId);
+      return NextResponse.json({ 
+        success: true, 
+        uniqueId,
+        needsLocalStorageUpdate: false // No need to update localStorage
+      });
+    }
+
+    // If we found a feedback entry with different data, create new entry
+    if (feedbackEntry.unique_id !== uniqueId) {
+      const newUniqueId = uuidv4();
+      console.log('Creating new entry with UUID:', newUniqueId);
+
+      // Create new entry
+      const updateData = {
+        unique_id: newUniqueId,
+        plate,
+        channel,
+        phone,
+        name,
+        signup_at: new Date(),
+        status: 'joined+feedback'
+      };
+
+      const { error: insertError } = await supabase
+        .from("signups")
+        .insert([updateData]);
+
+      if (insertError) {
+        console.error('Error creating new entry:', insertError);
+        return NextResponse.json({ error: "Failed to create new entry" }, { status: 500 });
+      }
+
+      console.log('Successfully created new entry for plate:', plate);
+      return NextResponse.json({ 
+        success: true, 
+        uniqueId: newUniqueId,
+        needsLocalStorageUpdate: true // Indicate that localStorage needs to be updated
+      });
+    }
+
+    // If we found a feedback entry with same UUID, allow updating the feedback
     const updateData = {
       plate,
       channel,
       phone,
       name,
-      signup_at: new Date(),
-      city: geo?.city || null,
-      region: geo?.region || null,
-      country: geo?.country || null,
-      lat: geo?.lat || null,
-      lon: geo?.lon || null
+      signup_at: feedbackEntry.signup_at || new Date(), // Keep original signup_at if exists
+      status: 'joined+feedback'
     };
 
-    const { data: existing } = await supabase
+    // Perform the update with proper error handling
+    const { data: updated, error: updateError } = await supabase
       .from("signups")
-      .select("id")
-      .eq("ip", ip)
-      .maybeSingle();
+      .update(updateData)
+      .eq("unique_id", uniqueId)
+      .select()
+      .single();
 
-    if (existing) {
-      await supabase
-        .from("signups")
-        .update(updateData)
-        .eq("ip", ip);
-    } else {
-      await supabase
-        .from("signups")
-        .insert([{
-          ip,
-          ...updateData
-        }]);
+    if (updateError) {
+      console.error('Error updating existing entry:', updateError);
+      return NextResponse.json({ error: "Failed to update existing entry" }, { status: 500 });
     }
 
-    return NextResponse.json({ success: true });
+    console.log('Successfully updated feedback entry for UUID:', uniqueId);
+    return NextResponse.json({ 
+      success: true, 
+      uniqueId,
+      needsLocalStorageUpdate: false // No need to update localStorage
+    });
 
   } catch (error) {
     console.error('Error in subscribe route:', error);
