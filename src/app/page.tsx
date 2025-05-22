@@ -75,13 +75,13 @@ export default function Home() {
 
   // Labels for the slider components
   const reminderLabels = ["5 min", "15 min", "25 min", "30 min"];
-  const monthlyLabels = ["0 €", "3 €", "5 €", "10 €"];
-  const perUseLabels = ["0 €", "0,5 €", "1 €", "2 €"];
+  const monthlyLabels = ["0 €", "2 €", "4 €", "6 €", "8 €", "10 €"];
+  const perUseLabels = ["0 €", "0,25 €", "0,5 €", "1 €", "2 €", "4 €"];
 
   // State for slider values
   const [reminderLabel, setReminderLabel] = useState(reminderLabels[1]);
-  const [monthlyLabel, setMonthlyLabel] = useState(monthlyLabels[1]);
-  const [perUseLabel, setPerUseLabel] = useState(perUseLabels[1]);
+  const [monthlyLabel, setMonthlyLabel] = useState(monthlyLabels[2]);
+  const [perUseLabel, setPerUseLabel] = useState(perUseLabels[2]);
 
   // Function to get user's IP address and location data
   const getIpAddress = async (): Promise<{ ip: string; latitude: number; longitude: number; city: string; region: string; country: string } | null> => {
