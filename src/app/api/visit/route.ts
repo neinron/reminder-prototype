@@ -8,8 +8,30 @@ export async function POST(req: NextRequest) {
   try {
     console.log('Visit endpoint called - Creating new visitor entry');
     
-    // Get existing UUID from request if provided
-    const data = await req.json();
+    // Get request body and log it
+    const text = await req.text();
+    console.log('Request body:', text);
+    
+    if (!text) {
+      console.error('Empty request body received');
+      return NextResponse.json(
+        { error: 'Empty request body' },
+        { status: 400 }
+      );
+    }
+
+    // Parse JSON safely
+    let data;
+    try {
+      data = JSON.parse(text);
+    } catch (parseError) {
+      console.error('Error parsing JSON:', parseError);
+      return NextResponse.json(
+        { error: 'Invalid JSON format' },
+        { status: 400 }
+      );
+    }
+
     const { uniqueId } = data;
 
     // Use existing UUID or generate new one
@@ -46,7 +68,30 @@ export async function PUT(req: NextRequest) {
   try {
     console.log('Visit update endpoint called');
     
-    const data = await req.json();
+    // Get request body and log it
+    const text = await req.text();
+    console.log('Request body:', text);
+    
+    if (!text) {
+      console.error('Empty request body received');
+      return NextResponse.json(
+        { error: 'Empty request body' },
+        { status: 400 }
+      );
+    }
+
+    // Parse JSON safely
+    let data;
+    try {
+      data = JSON.parse(text);
+    } catch (parseError) {
+      console.error('Error parsing JSON:', parseError);
+      return NextResponse.json(
+        { error: 'Invalid JSON format' },
+        { status: 400 }
+      );
+    }
+
     const { uniqueId } = data;
 
     if (!uniqueId) {
