@@ -1,8 +1,17 @@
 import { createClient } from "@supabase/supabase-js"
 
 // Create Supabase client with anon key
-const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL || 'https://xtuvhddxprlfydnpunlo.supabase.co'
-const supabaseAnonKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY || 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Inh0dXZoZGR4cHJsZnlkbnB1bmxvIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NDU1MDg5MzksImV4cCI6MjA2MTA4NDkzOX0.8ObDMX7suKactx6H93I3wEwuQ_beqTOSN2BUPIM42lg'
+const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL
+const supabaseAnonKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY
+
+if (!supabaseUrl || !supabaseAnonKey) {
+  console.error('Missing Supabase configuration:', {
+    hasUrl: !!supabaseUrl,
+    hasKey: !!supabaseAnonKey,
+    environment: process.env.NODE_ENV
+  });
+  throw new Error('Supabase configuration is missing. Please set NEXT_PUBLIC_SUPABASE_URL and NEXT_PUBLIC_SUPABASE_ANON_KEY');
+}
 
 // Log configuration
 console.log('Supabase configuration:', {
