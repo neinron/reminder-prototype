@@ -9,7 +9,9 @@ const nextConfig = {
         headers: [
           {
             key: 'Access-Control-Allow-Origin',
-            value: 'http://192.168.178.50:3000',
+            value: process.env.NODE_ENV === 'development' 
+              ? 'http://192.168.178.50:3000' 
+              : 'https://reminder.wemolo.com',
           },
           {
             key: 'Access-Control-Allow-Methods',
@@ -18,10 +20,6 @@ const nextConfig = {
           {
             key: 'Access-Control-Allow-Headers',
             value: 'Content-Type, Authorization',
-          },
-          {
-            key: 'Access-Control-Allow-Origin',
-            value: 'https://reminder.wemolo.com',
           },
         ],
       },
