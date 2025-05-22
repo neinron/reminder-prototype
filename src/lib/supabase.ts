@@ -1,27 +1,35 @@
 import { createClient } from "@supabase/supabase-js"
 
-// Create Supabase client with anon key
-const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL
-const supabaseAnonKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY
+// For server-side usage, use non-public environment variables
+const supabaseUrl = process.env.SUPABASE_URL || process.env.NEXT_PUBLIC_SUPABASE_URL;
+const supabaseServiceRoleKey = process.env.SUPABASE_SERVICE_ROLE_KEY;
+// Fallback to anon key only for client-side usage
+const supabaseAnonKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY;
 
-if (!supabaseUrl || !supabaseAnonKey) {
+// Use service role key for server-side, anon key for client-side
+const isServer = typeof window === 'undefined';
+const supabaseKey = isServer ? supabaseServiceRoleKey : supabaseAnonKey;
+
+if (!supabaseUrl || !supabaseKey) {
   console.error('Missing Supabase configuration:', {
     hasUrl: !!supabaseUrl,
-    hasKey: !!supabaseAnonKey,
+    hasKey: !!supabaseKey,
     environment: process.env.NODE_ENV
   });
-  throw new Error('Supabase configuration is missing. Please set NEXT_PUBLIC_SUPABASE_URL and NEXT_PUBLIC_SUPABASE_ANON_KEY');
+  throw new Error('Supabase configuration is missing. Please set SUPABASE_URL and SUPABASE_SERVICE_ROLE_KEY (server) or NEXT_PUBLIC_SUPABASE_ANON_KEY (client)');
 }
 
-// Log configuration
-console.log('Supabase configuration:', {
-  url: supabaseUrl,
-  key: supabaseAnonKey?.substring(0, 20) + '...',
-  environment: process.env.NODE_ENV,
-  isProduction: process.env.NODE_ENV === 'production'
-})
+// Only log configuration on server, and do not log sensitive keys
+if (typeof window === 'undefined') {
+  console.log('Supabase configuration:', {
+    url: supabaseUrl,
+    key: supabaseKey ? '[hidden]' : undefined,
+    environment: process.env.NODE_ENV,
+    isProduction: process.env.NODE_ENV === 'production'
+  });
+}
 
-const supabase = createClient(supabaseUrl, supabaseAnonKey, {
+const supabase = createClient(supabaseUrl, supabaseKey, {
   auth: {
     autoRefreshToken: false,
     persistSession: false,

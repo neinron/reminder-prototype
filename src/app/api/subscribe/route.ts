@@ -77,38 +77,59 @@ export async function POST(req: NextRequest) {
       return NextResponse.json({ error: "Database query error" }, { status: 500 });
     }
 
-    // If we have an existing entry with this UUID and it's not feedback, create new entry
-    if (existingUuid && existingUuid.status !== 'joined+feedback') {
-      const newUniqueId = uuidv4();
-      console.log('Creating new entry with UUID:', newUniqueId);
-
-      // Create new entry
-      const updateData = {
-        unique_id: newUniqueId,
-        plate,
-        channel,
-        phone,
-        name,
-        signup_at: new Date(),
-        status: 'joined_waiting_list'
-      };
-
-      const { error: insertError } = await supabase
+    // If we have an existing entry with this UUID, update it
+    if (existingUuid) {
+      const { error: updateError } = await supabase
         .from("signups")
-        .insert([updateData]);
+        .update({
+          plate,
+          channel,
+          phone,
+          name,
+          signup_at: new Date(),
+          status: 'joined_waiting_list'
+        })
+        .eq("unique_id", uniqueId);
 
-      if (insertError) {
-        console.error('Error creating new entry:', insertError);
-        return NextResponse.json({ error: "Failed to create new entry" }, { status: 500 });
+      if (updateError) {
+        console.error('Error updating existing entry:', updateError);
+        return NextResponse.json({ error: "Failed to update existing entry" }, { status: 500 });
       }
 
-      console.log('Successfully created new entry for plate:', plate);
+      console.log('Successfully updated existing entry for UUID:', uniqueId);
       return NextResponse.json({ 
         success: true, 
-        uniqueId: newUniqueId,
-        needsLocalStorageUpdate: true
+        uniqueId: uniqueId,
+        updated: true
       });
     }
+
+    // If no entry exists, insert new row
+    const signupData = {
+      unique_id: uniqueId,
+      plate,
+      channel,
+      phone,
+      name,
+      signup_at: new Date(),
+      status: 'joined_waiting_list'
+    };
+
+    const { error: insertError } = await supabase
+      .from("signups")
+      .insert([signupData]);
+
+    if (insertError) {
+      console.error('Error creating new entry:', insertError);
+      return NextResponse.json({ error: "Failed to create new entry" }, { status: 500 });
+    }
+
+    console.log('Successfully created new entry for plate:', plate);
+    return NextResponse.json({ 
+      success: true, 
+      uniqueId: uniqueId,
+      created: true
+    });
 
     // Check for existing feedback entry with same plate, phone, name, and channel
     const { data: feedbackEntry, error: feedbackError } = await supabase
@@ -145,7 +166,7 @@ export async function POST(req: NextRequest) {
         console.log('Creating new entry with UUID:', newUniqueId);
 
         // Create new entry
-        const updateData = {
+        const feedbackSignupData = {
           unique_id: newUniqueId,
           plate,
           channel,
@@ -157,7 +178,7 @@ export async function POST(req: NextRequest) {
 
         const { error: insertError } = await supabase
           .from("signups")
-          .insert([updateData]);
+          .insert([feedbackSignupData]);
 
         if (insertError) {
           console.error('Error creating new entry:', insertError);
