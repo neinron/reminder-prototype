@@ -24,7 +24,8 @@ console.log('Supabase configuration:', {
 const supabase = createClient(supabaseUrl, supabaseAnonKey, {
   auth: {
     autoRefreshToken: false,
-    persistSession: false
+    persistSession: false,
+    detectSessionInUrl: false
   }
 })
 
