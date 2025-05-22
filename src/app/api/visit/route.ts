@@ -8,26 +8,13 @@ export async function POST(req: NextRequest) {
   try {
     console.log('Visit endpoint called - Creating new visitor entry');
     
-    // Get request body and log it
-    const text = await req.text();
-    console.log('Request body:', text);
+    // Get and parse request body
+    const data = await req.json();
     
-    if (!text) {
+    if (!data) {
       console.error('Empty request body received');
       return NextResponse.json(
         { error: 'Empty request body' },
-        { status: 400 }
-      );
-    }
-
-    // Parse JSON safely
-    let data;
-    try {
-      data = JSON.parse(text);
-    } catch (parseError) {
-      console.error('Error parsing JSON:', parseError);
-      return NextResponse.json(
-        { error: 'Invalid JSON format' },
         { status: 400 }
       );
     }
@@ -68,26 +55,13 @@ export async function PUT(req: NextRequest) {
   try {
     console.log('Visit update endpoint called');
     
-    // Get request body and log it
-    const text = await req.text();
-    console.log('Request body:', text);
+    // Get and parse request body
+    const data = await req.json();
     
-    if (!text) {
+    if (!data) {
       console.error('Empty request body received');
       return NextResponse.json(
         { error: 'Empty request body' },
-        { status: 400 }
-      );
-    }
-
-    // Parse JSON safely
-    let data;
-    try {
-      data = JSON.parse(text);
-    } catch (parseError) {
-      console.error('Error parsing JSON:', parseError);
-      return NextResponse.json(
-        { error: 'Invalid JSON format' },
         { status: 400 }
       );
     }
