@@ -108,7 +108,10 @@ export default function Home() {
       const locationData = (hasLocation && position) ? {
         latitude: position.coords.latitude,
         longitude: position.coords.longitude
-      } : ipData.location || {};
+      } : {
+        latitude: ipData.location?.latitude,
+        longitude: ipData.location?.longitude
+      };
 
       // Create or update user record
       if (!existingData?.id) {
@@ -117,20 +120,21 @@ export default function Home() {
           .from('signups')
           .insert({
             ip: ipData.ip,
-            visited_at: new Date().toISOString(),
-            status: 'visited',
+            visited_at: new Date().toLocaleString('de-DE', { timeZone: 'Europe/Berlin' }),
             ...locationData
           })
           .select('id')
           .single();
 
-        console.log('Created new entry with ID:', createdData?.id);
+        if (createdData?.id) {
+          console.log('Created new entry with ID:', createdData.id);
+        }
       } else {
         // Update existing entry with new visit data
         await supabase
           .from('signups')
           .update({
-            visited_at: new Date().toISOString(),
+            visited_at: new Date().toLocaleString('de-DE', { timeZone: 'Europe/Berlin' }),
             ...locationData
           })
           .eq('id', existingData.id);
@@ -204,8 +208,8 @@ export default function Home() {
           channel: smsSelected && whatsappSelected ? "sms+whatsapp" : smsSelected ? "sms" : whatsappSelected ? "whatsapp" : "",
           phone: contactValue,
           name: nameValue,
-          signup_at: new Date().toISOString(),
-          visited_at: new Date().toISOString(),
+          signup_at: new Date().toLocaleString('de-DE', { timeZone: 'Europe/Berlin' }),
+          visited_at: new Date().toLocaleString('de-DE', { timeZone: 'Europe/Berlin' }),
           status: 'joined_waiting_list'
         })
         .eq('id', entryId)
