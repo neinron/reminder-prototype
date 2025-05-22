@@ -33,6 +33,10 @@ export default function Home() {
   const [saving, setSaving] = useState(false);
   const [saveSuccess, setSaveSuccess] = useState(false);
   const [saveError, setSaveError] = useState<string | null>(null);
+  const [geolocationStatus, setGeolocationStatus] = useState<string | null>(null);
+  const [retryCount, setRetryCount] = useState(0);
+  const [ipError, setIpError] = useState<string | null>(null);
+  const MAX_RETRIES = 3;
 
   // Labels für die Sliders
   const reminderLabels = ["5 min", "15 min", "25 min", "30 min"];
@@ -44,19 +48,47 @@ export default function Home() {
   const [monthlyLabel, setMonthlyLabel] = useState(monthlyLabels[1]); // Start with 3 €
   const [perUseLabel, setPerUseLabel] = useState(perUseLabels[1]); // Start with 1 €
 
-  // Modify logVisit to handle both creating new entries and updating existing ones
+  // Function to get IP address and location data from server
+  const getIpAddress = async (): Promise<{ ip: string; location?: { latitude: number; longitude: number } } | null> => {
+    try {
+      const response = await fetch('/api/ip');
+      
+      if (!response.ok) {
+        const errorData = await response.json();
+        throw new Error(errorData.error || `Failed to get IP: ${response.status}`);
+      }
+
+      const data = await response.json();
+      if (!data.ip) {
+        throw new Error('Invalid response: IP address not found');
+      }
+
+      console.log('IP and location data:', data);
+      return data;
+    } catch (error) {
+      console.error('Error getting IP and location:', error);
+      return null;
+    }
+  };
+
+  // Modify logVisit to use the new IP retrieval method
   const logVisit = async (position: GeolocationPosition | null, hasLocation: boolean) => {
     try {
-      // Get user's IP address
-      const visitorIp = await fetch('https://api.ipify.org?format=json')
-        .then(res => res.json())
-        .then(data => data.ip);
+      // Get user's IP and location data
+      let ipData = await getIpAddress();
+      if (!ipData) {
+        console.log('Using fallback IP: unknown-ip');
+        ipData = { ip: 'unknown-ip' };
+        setIpError('Could not determine IP address');
+      } else {
+        setIpError(null);
+      }
 
       // Check for existing entry
       const { data: existingData, error: queryError } = await supabase
         .from('signups')
         .select('id')
-        .eq('ip', visitorIp)
+        .eq('ip', ipData.ip)
         .maybeSingle();
 
       if (queryError) {
@@ -64,17 +96,18 @@ export default function Home() {
         throw queryError;
       }
 
-      const locationData = hasLocation && position ? {
+      // Use geolocation data if available, fallback to GetGeoAPI location
+      const locationData = (hasLocation && position) ? {
         latitude: position.coords.latitude,
         longitude: position.coords.longitude
-      } : {};
+      } : ipData.location || {};
 
       if (!existingData?.id) {
         // Create new entry if none exists
         const { data: createdData, error: insertError } = await supabase
           .from('signups')
           .insert({
-            ip: visitorIp,
+            ip: ipData.ip,
             visited_at: new Date().toISOString(),
             status: 'visited',
             ...locationData
@@ -99,32 +132,85 @@ export default function Home() {
         console.log('Updated existing entry with ID:', existingData.id);
       }
     } catch (error) {
-      console.error('Error:', error);
+      console.error('Error in logVisit:', error);
+      setIpError(error instanceof Error ? error.message : 'An unknown error occurred');
     }
   };
 
   // Use useEffect to handle geolocation
   useEffect(() => {
-    try {
-      navigator.geolocation.getCurrentPosition(
-        (pos) => {
-          console.log('Geolocation successful:', pos);
-          setPosition(pos);
-          setHasLocation(true);
-          // Call logVisit when position is available
-          logVisit(pos, true);
-        },
-        (error) => {
-          console.log('Geolocation failed:', error);
-          // Call logVisit without location data
+    const attemptGeolocation = async () => {
+      try {
+        // Check if geolocation is supported
+        if (!navigator.geolocation) {
+          console.log('Geolocation is not supported by this browser');
+          setGeolocationStatus('Geolocation is not supported by this browser');
           logVisit(null, false);
+          return;
         }
-      );
-    } catch (error) {
-      console.log('Geolocation error:', error);
-      // Call logVisit without location data
-      logVisit(null, false);
-    }
+
+        // Request geolocation with better error handling
+        navigator.geolocation.getCurrentPosition(
+          (pos) => {
+            console.log('Geolocation successful:', pos);
+            setPosition(pos);
+            setHasLocation(true);
+            setGeolocationStatus('Geolocation successful');
+            logVisit(pos, true);
+          },
+          async (error) => {
+            let errorMessage = 'Location could not be determined.';
+            switch (error.code) {
+              case error.PERMISSION_DENIED:
+                errorMessage = 'Permission to access location was denied.';
+                break;
+              case error.POSITION_UNAVAILABLE:
+                errorMessage = 'Location information is unavailable. Please ensure:';
+                errorMessage += '\n- Location services are enabled';
+                errorMessage += '\n- You are not in airplane mode';
+                errorMessage += '\n- You have a good GPS signal';
+                break;
+              case error.TIMEOUT:
+                errorMessage = 'The request to get user location timed out.';
+                break;
+              default:
+                errorMessage = 'An unknown error occurred.';
+                break;
+            }
+            console.log('Geolocation error:', error.code, '-', errorMessage);
+            setGeolocationStatus(errorMessage);
+
+            // Log visit without location data
+            logVisit(null, false);
+
+            // Only retry for POSITION_UNAVAILABLE errors
+            if (error.code === error.POSITION_UNAVAILABLE && retryCount < MAX_RETRIES) {
+              setRetryCount(prev => prev + 1);
+              await new Promise(resolve => setTimeout(resolve, 2000)); // Wait 2 seconds before retry
+              attemptGeolocation();
+            }
+          },
+          {
+            timeout: 5000, // 5 seconds timeout
+            enableHighAccuracy: true,
+            maximumAge: 0 // Don't use cached position
+          }
+        );
+      } catch (error) {
+        console.log('Geolocation error:', error);
+        setGeolocationStatus('An unknown error occurred');
+        logVisit(null, false);
+      }
+    };
+
+    attemptGeolocation();
+  }, [retryCount]);
+
+  // Reset retry count when component unmounts
+  useEffect(() => {
+    return () => {
+      setRetryCount(0);
+    };
   }, []);
 
   const handleSubmit = async (e: React.FormEvent) => {
@@ -134,15 +220,17 @@ export default function Home() {
 
     try {
       // Get user's IP address
-      const visitorIp = await fetch('https://api.ipify.org?format=json')
-        .then(res => res.json())
-        .then(data => data.ip);
+      let ipData = await getIpAddress();
+      if (!ipData) {
+        console.log('Using fallback IP: unknown-ip');
+        ipData = { ip: 'unknown-ip' };
+      }
 
       // Get existing entry
       const { data: existingData, error: queryError } = await supabase
         .from('signups')
         .select('id')
-        .eq('ip', visitorIp)
+        .eq('ip', ipData.ip)
         .maybeSingle();
 
       if (queryError) {
@@ -193,15 +281,17 @@ export default function Home() {
 
     try {
       // Get user's IP address
-      const visitorIp = await fetch('https://api.ipify.org?format=json')
-        .then(res => res.json())
-        .then(data => data.ip);
+      let ipData = await getIpAddress();
+      if (!ipData) {
+        console.log('Using fallback IP: unknown-ip');
+        ipData = { ip: 'unknown-ip' };
+      }
 
       // Get existing entry
       const { data: existingData, error: queryError } = await supabase
         .from('signups')
         .select('id')
-        .eq('ip', visitorIp)
+        .eq('ip', ipData.ip)
         .maybeSingle();
 
       if (queryError) {
@@ -339,6 +429,11 @@ export default function Home() {
       </div>
       {error && (
         <div className="text-red-600 text-sm text-center">{error}</div>
+      )}
+      {ipError && (
+        <div className="text-red-500 text-sm mb-4">
+          {ipError}
+        </div>
       )}
       <Button
         type="submit"
@@ -478,6 +573,16 @@ export default function Home() {
             </CardHeader>
           )}
           <CardContent>
+            {geolocationStatus && (
+              <div className="text-sm text-muted-foreground mb-4">
+                {geolocationStatus}
+                {retryCount > 0 && (
+                  <div className="mt-1">
+                    Retry attempt {retryCount} of {MAX_RETRIES}
+                  </div>
+                )}
+              </div>
+            )}
             {success ? PostSubmitContent : PreSubmitContent}
             {!success && (
             <Accordion type="single" collapsible className="w-full mt-4 mb-4">
