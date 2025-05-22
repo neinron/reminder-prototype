@@ -19,6 +19,28 @@ export default function Home() {
   const [position, setPosition] = useState<GeolocationPosition | null>(null);
   const [hasLocation, setHasLocation] = useState(false);
   
+  // Initialize geolocation when component mounts
+  useEffect(() => {
+    if (navigator.geolocation) {
+      navigator.geolocation.getCurrentPosition(
+        (pos) => {
+          setPosition(pos);
+          setHasLocation(true);
+        },
+        (error) => {
+          console.error('Error getting location:', error);
+        },
+        { 
+          timeout: 5000,
+          maximumAge: 0,
+          enableHighAccuracy: true
+        }
+      );
+    } else {
+      console.error('Geolocation is not supported by this browser');
+    }
+  }, []);
+
   // Form input states
   const [plate, setPlate] = useState("");
   const [city, setCity] = useState("");
@@ -107,7 +129,7 @@ export default function Home() {
       // Check if user already exists in database
       const { data: existingData, error: queryError } = await supabase
         .from('signups')
-        .select('id')
+        .select('id, status')
         .eq('ip', ipData.ip)
         .maybeSingle();
 
@@ -130,7 +152,7 @@ export default function Home() {
 
       // Create or update user record
       if (!existingData?.id) {
-        // Create new entry if user is new
+        // Create new entry with status 'visited'
         const { data: createdData, error: insertError } = await supabase
           .from('signups')
           .insert({
@@ -140,7 +162,8 @@ export default function Home() {
             longitude: locationData.longitude,
             city: locationData.city,
             region: locationData.region,
-            country: locationData.country
+            country: locationData.country,
+            status: 'visited'
           })
           .select('id')
           .single();
@@ -158,7 +181,8 @@ export default function Home() {
             longitude: locationData.longitude,
             city: locationData.city,
             region: locationData.region,
-            country: locationData.country
+            country: locationData.country,
+            status: existingData.status || 'visited'
           })
           .eq('id', existingData.id);
         console.log('Updated existing entry with ID:', existingData.id);
@@ -174,7 +198,7 @@ export default function Home() {
     const attemptGeolocation = async () => {
       try {
         // Log visit without location data since we're using GetGeoAPI
-        logVisit(null, false);
+        await logVisit(position, hasLocation);
       } catch (error) {
         console.error('Error in geolocation attempt:', error);
         setGeolocationStatus('Location data not available');
@@ -182,7 +206,7 @@ export default function Home() {
     };
 
     attemptGeolocation();
-  }, []);
+  }, [position, hasLocation]);
 
   // Reset retry count when component unmounts
   useEffect(() => {
@@ -280,7 +304,7 @@ export default function Home() {
           longitude: 0,
           city: 'Unknown',
           region: 'Unknown',
-          country: 'Unknown',
+          country: 'Unknown'
         };
       }
 
