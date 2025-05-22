@@ -10,7 +10,7 @@ const nextConfig = {
           {
             key: 'Access-Control-Allow-Origin',
             value: process.env.NODE_ENV === 'development' 
-              ? 'http://192.168.178.50:3000' 
+              ? 'http://localhost:3000' 
               : 'https://reminder.wemolo.com',
           },
           {
