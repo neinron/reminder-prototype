@@ -6,10 +6,21 @@ export async function POST(req: NextRequest) {
   try {
     console.log('Feedback endpoint called - Processing feedback submission');
     
-    const data = await req.json();
-    console.log('Raw feedback data:', data); // Log raw data before destructuring
-    
-    const { uniqueId, reminderLead, monthlyValue, perUseValue, benefit, benefitOther } = data;
+    let data: any = {};
+    try {
+      data = await req.json();
+    } catch (err) {
+      console.error('Malformed or empty JSON body received:', err);
+      return NextResponse.json({ error: 'Malformed or empty JSON body.' }, { status: 400 });
+    }
+
+    // Support both camelCase and snake_case for uniqueId
+    const uniqueId = data.uniqueId || data.unique_id;
+    const reminderLead = data.reminderLead || data.reminder_lead;
+    const monthlyValue = data.monthlyValue || data.monthly_value;
+    const perUseValue = data.perUseValue || data.per_use_value;
+    const benefit = data.benefit;
+    const benefitOther = data.benefitOther || data.benefit_other;
 
     console.log('Received feedback data:', {
       uniqueId,
@@ -84,7 +95,7 @@ export async function POST(req: NextRequest) {
   } catch (error) {
     console.error('Error in feedback route:', error);
     return NextResponse.json(
-      { error: 'Ein unerwarteter Fehler ist aufgetreten.' },
+      { error: 'Ein unerwarteter Fehler ist aufgetreten.', details: (error instanceof Error ? error.message : error) },
       { status: 500 }
     );
   }

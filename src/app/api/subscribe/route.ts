@@ -7,8 +7,17 @@ export async function POST(req: NextRequest) {
   try {
     console.log('Subscribe endpoint called - Processing form submission');
     
-    const data = await req.json();
-    const { plate, channel, phone, name, uniqueId } = data;
+    let data: any = {};
+    try {
+      data = await req.json();
+    } catch (err) {
+      console.error('Malformed or empty JSON body received:', err);
+      return NextResponse.json({ error: 'Malformed or empty JSON body.' }, { status: 400 });
+    }
+
+    // Support both camelCase and snake_case for uniqueId
+    const uniqueId = data.uniqueId || data.unique_id;
+    const { plate, channel, phone, name } = data;
 
     console.log('Received form submission data:', {
       plate,
@@ -18,8 +27,8 @@ export async function POST(req: NextRequest) {
       uniqueId
     });
 
-    // Always require uniqueId from the request
     if (!uniqueId) {
+      console.error('No uniqueId provided in subscribe data');
       return NextResponse.json(
         { error: 'No uniqueId provided' },
         { status: 400 }
@@ -269,7 +278,7 @@ export async function POST(req: NextRequest) {
   } catch (error) {
     console.error('Error in subscribe route:', error);
     return NextResponse.json(
-      { error: 'Ein unerwarteter Fehler ist aufgetreten.' },
+      { error: 'Ein unerwarteter Fehler ist aufgetreten.', details: (error instanceof Error ? error.message : error) },
       { status: 500 }
     );
   }
