@@ -4,50 +4,68 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { Label } from "@/components/ui/label";
-import { Checkbox } from "@/components/ui/checkbox"
-import { LicensePlateInput } from "@/components/ui/input-licenseplate"
+import { Checkbox } from "@/components/ui/checkbox";
+import { LicensePlateInput } from "@/components/ui/input-licenseplate";
 import React from "react";
 import { Mail, Check, Bell, PartyPopper } from "lucide-react";
 import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from "@/components/ui/accordion";
 import { FaWhatsapp } from "react-icons/fa";
 import SliderMarksDemo from "@/components/customized/slider/slider-09";
 import supabase from "@/lib/supabase";
+import { useFormData } from "@/lib/localStorage";
 
 export default function Home() {
-  const [plate, setPlate] = useState("");
-  const [city, setCity] = useState("");
-  const [rest, setRest] = useState("");
-  // Kontaktkanäle
-  const [contactValue, setContactValue] = useState("");
-  const [nameValue, setNameValue] = useState("");
-  const [smsSelected, setSmsSelected] = useState(false);
-  const [whatsappSelected, setWhatsappSelected] = useState(false);
+  const { formData, save: saveFormData } = useFormData();
+
+  // Initialize form state with saved data or defaults
+  const [plate, setPlate] = useState(formData?.plate || "");
+  const [city, setCity] = useState(formData?.city || "");
+  const [rest, setRest] = useState(formData?.rest || "");
+  const [contactValue, setContactValue] = useState(formData?.contactValue || "");
+  const [nameValue, setNameValue] = useState(formData?.nameValue || "");
+  const [smsSelected, setSmsSelected] = useState(formData?.smsSelected || false);
+  const [whatsappSelected, setWhatsappSelected] = useState(formData?.whatsappSelected || false);
+  const [benefit, setBenefit] = useState<string[]>(formData?.benefit || []);
+  const [benefitOther, setBenefitOther] = useState(formData?.benefitOther || "");
   const [submitting, setSubmitting] = useState(false);
   const [success, setSuccess] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [acceptedTerms, setAcceptedTerms] = useState(false);
-
-  const [benefit, setBenefit] = useState<string[]>([]); // Array für mehrere Checkboxen
-  const [benefitOther, setBenefitOther] = useState(""); // Freitext für "Other"
   const [saving, setSaving] = useState(false);
   const [saveSuccess, setSaveSuccess] = useState(false);
   const [saveError, setSaveError] = useState<string | null>(null);
 
-// Labels für die Sliders
-const reminderLabels = ["5 min", "15 min", "25 min", "30 min"];
-const monthlyLabels = ["1 €", "3 €", "5 €", "10 €"];
-const perUseLabels = ["0,50 €", "1 €", "2 €", "3 €"];
+  // Labels für die Sliders
+  const reminderLabels = ["5 min", "15 min", "25 min", "30 min"];
+  const monthlyLabels = ["1 €", "3 €", "5 €", "10 €"];
+  const perUseLabels = ["0,50 €", "1 €", "2 €", "3 €"];
 
-// Zustände für die Labels
-const [reminderLabel, setReminderLabel] = useState(reminderLabels[1]); // Start with 15 min
-const [monthlyLabel, setMonthlyLabel] = useState(monthlyLabels[1]); // Start with 3 €
-const [perUseLabel, setPerUseLabel] = useState(perUseLabels[1]); // Start with 1 €
+  // Zustände für die Labels
+  const [reminderLabel, setReminderLabel] = useState(reminderLabels[1]); // Start with 15 min
+  const [monthlyLabel, setMonthlyLabel] = useState(monthlyLabels[1]); // Start with 3 €
+  const [perUseLabel, setPerUseLabel] = useState(perUseLabels[1]); // Start with 1 €
+
+  // Save form data to localStorage whenever it changes
+  useEffect(() => {
+    const formData = {
+      plate,
+      city,
+      rest,
+      contactValue,
+      nameValue,
+      smsSelected,
+      whatsappSelected,
+      benefit,
+      benefitOther
+    };
+    saveFormData(formData);
+  }, [plate, city, rest, contactValue, nameValue, smsSelected, whatsappSelected, benefit, benefitOther]);
 
   // Log visit and geolocation on page load
   useEffect(() => {
     const logVisitWithGeo = async () => {
-    let visitorIp: string = '';
-    try {
+      let visitorIp: string = '';
+      try {
         // Get geolocation
         const position = await new Promise<GeolocationPosition>((resolve, reject) => {
           navigator.geolocation.getCurrentPosition(resolve, reject);
@@ -59,36 +77,37 @@ const [perUseLabel, setPerUseLabel] = useState(perUseLabels[1]); // Start with 1
           .then(data => data.ip);
 
         // First check if an entry exists for this IP
-        const { data: existingData } = await supabase
+        const { data: existingData, error: queryError } = await supabase
           .from('signups')
           .select('*')
-          .eq('ip', visitorIp)
-          .single();
+          .eq('ip', visitorIp);
+
+        if (queryError) {
+          console.error('Error querying existing data:', queryError);
+          return;
+        }
 
         let updateError: any;
-        if (existingData) {
+        if (existingData && existingData.length > 0) {
           // Update existing entry
           updateError = await supabase
             .from('signups')
             .update({
-              lat: position.coords.latitude,
-              lon: position.coords.longitude,
               visited_at: new Date().toISOString(),
-              channel: 'page_load'
+              status: 'visited'
             })
-            .eq('id', existingData.id)
+            .eq('id', existingData[0].id)
             .then(({ error }) => error);
         } else {
           // Create new entry
           updateError = await supabase
             .from('signups')
             .insert({
-              lat: position.coords.latitude,
-              lon: position.coords.longitude,
               ip: visitorIp,
               signup_at: new Date().toISOString(),
               visited_at: new Date().toISOString(),
-              channel: 'page_load'
+              status: 'visited',
+              channel: ''
             })
             .then(({ error }) => error);
         }
@@ -97,29 +116,30 @@ const [perUseLabel, setPerUseLabel] = useState(perUseLabels[1]); // Start with 1
           console.error('Error logging visit:', updateError);
         }
 
-        if (error) {
-          console.error('Error logging visit:', error);
-        }
       } catch (error) {
         console.error('Error getting geolocation:', error);
         // Still log the visit without location data
         // First check if an entry exists for this IP
-        const { data: existingData } = await supabase
+        const { data: existingData, error: queryError } = await supabase
           .from('signups')
           .select('*')
-          .eq('ip', visitorIp)
-          .single();
+          .eq('ip', visitorIp);
+
+        if (queryError) {
+          console.error('Error querying existing data:', queryError);
+          return;
+        }
 
         let updateError: any;
-        if (existingData) {
+        if (existingData && existingData.length > 0) {
           // Update existing entry
           updateError = await supabase
             .from('signups')
             .update({
               visited_at: new Date().toISOString(),
-              channel: 'page_load'
+              status: 'visited'
             })
-            .eq('id', existingData.id)
+            .eq('id', existingData[0].id)
             .then(({ error }) => error);
         } else {
           // Create new entry
@@ -129,15 +149,12 @@ const [perUseLabel, setPerUseLabel] = useState(perUseLabels[1]); // Start with 1
               ip: visitorIp,
               signup_at: new Date().toISOString(),
               visited_at: new Date().toISOString(),
-              channel: 'page_load'
+              status: 'visited',
+              channel: ''
             })
             .then(({ error }) => error);
         }
 
-        if (updateError) {
-          console.error('Error logging visit:', updateError);
-        }
-        
         if (updateError) {
           console.error('Error logging visit:', updateError);
         }
@@ -152,33 +169,102 @@ const [perUseLabel, setPerUseLabel] = useState(perUseLabels[1]); // Start with 1
     setSubmitting(true);
     setError(null);
 
-    // Kennzeichen mit Bindestrich zusammensetzen
-    const stitchedPlate = city && rest ? `${city}-${rest}` : plate;
-    // Channel-String bestimmen
-    let channel = "";
-    if (smsSelected && whatsappSelected) channel = "sms+whatsapp";
-    else if (smsSelected) channel = "sms";
-    else if (whatsappSelected) channel = "whatsapp";
-    const payload: Record<string, string> = {
-      plate: stitchedPlate,
-      channel,
-      phone: contactValue,
-      name: nameValue,
-    };
+    try {
+      // Get user's IP address
+      const visitorIp = await fetch('https://api.ipify.org?format=json')
+        .then(res => res.json())
+        .then(data => data.ip);
 
-    const res = await fetch("/api/subscribe", {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify(payload),
-    });
+      // Get existing entry
+      const { data: existingData, error: queryError } = await supabase
+        .from('signups')
+        .select('*')
+        .eq('ip', visitorIp);
 
-    if (res.ok) {
+      if (queryError) {
+        console.error('Error querying existing data:', queryError);
+        throw queryError;
+      }
+
+      // If no existing entry, create one
+      let entryId;
+      if (!existingData || existingData.length === 0) {
+        const { data: createdData, error: insertError } = await supabase
+          .from('signups')
+          .insert({
+            ip: visitorIp,
+            signup_at: new Date().toISOString(),
+            visited_at: new Date().toISOString(),
+            status: 'joined_waiting_list',
+            channel: smsSelected && whatsappSelected ? "sms+whatsapp" : smsSelected ? "sms" : whatsappSelected ? "whatsapp" : "",
+            plate: city && rest ? `${city}-${rest}` : plate,
+            phone: contactValue,
+            name: nameValue
+          })
+          .select('id')
+          .single();
+
+        if (insertError) {
+          throw insertError;
+        }
+        entryId = createdData.id;
+      } else {
+        entryId = existingData[0].id;
+      }
+
+      // Update the entry with form data
+      const updateError = await supabase
+        .from('signups')
+        .update({
+          plate: city && rest ? `${city}-${rest}` : plate,
+          channel: smsSelected && whatsappSelected ? "sms+whatsapp" : smsSelected ? "sms" : whatsappSelected ? "whatsapp" : "",
+          phone: contactValue,
+          name: nameValue,
+          signup_at: new Date().toISOString(),
+          visited_at: new Date().toISOString(),
+          status: 'joined_waiting_list'
+        })
+        .eq('id', entryId)
+        .then(({ error }) => error);
+
+      if (updateError) {
+        throw updateError;
+      }
+
+      // Update status to joined+feedback
+      const feedbackError = await supabase
+        .from('signups')
+        .update({
+          status: 'joined+feedback'
+        })
+        .eq('id', entryId)
+        .then(({ error }) => error);
+
+      if (feedbackError) {
+        throw feedbackError;
+      }
+
       setSuccess(true);
       window.scrollTo(0, 0);
-    } else {
+      // Clear form data from localStorage after successful submission
+      const formData = new FormData();
+      formData.append('plate', plate);
+      formData.append('city', city);
+      formData.append('rest', rest);
+      formData.append('contactValue', contactValue);
+      formData.append('nameValue', nameValue);
+      formData.append('smsSelected', smsSelected ? 'true' : 'false');
+      formData.append('whatsappSelected', whatsappSelected ? 'true' : 'false');
+      formData.append('benefit', JSON.stringify(benefit));
+      formData.append('benefitOther', benefitOther);
+      saveFormData(formData);
+
+    } catch (error) {
+      console.error('Error updating form data:', error);
       setError("Irgendwas lief schief. Bitte versuch es erneut.");
+    } finally {
+      setSubmitting(false);
     }
-    setSubmitting(false);
   };
 
   // --- Pre-Submit-Ansicht (Formular, Hinweise etc.) ---
@@ -239,7 +325,7 @@ const [perUseLabel, setPerUseLabel] = useState(perUseLabels[1]); // Start with 1
         <Button
           type="button"
           variant="outline"
-          onClick={() => setSmsSelected(v => !v)}
+          onClick={() => setSmsSelected((v: boolean) => !v)}
           className={
             (smsSelected
               ? "bg-[#5046e8] border-2 border-[#5046e8] text-white"
@@ -248,16 +334,15 @@ const [perUseLabel, setPerUseLabel] = useState(perUseLabels[1]); // Start with 1
           }
         >
           <Mail
-            className="inline mr-1 align-text-bottom"
+            className={`inline mr-1 align-text-bottom text-${smsSelected ? 'white' : 'black'}`}
             size={18}
-            color={smsSelected ? "white" : "black"}
           />
           SMS
         </Button>
         <Button
           type="button"
           variant="outline"
-          onClick={() => setWhatsappSelected(v => !v)}
+          onClick={() => setWhatsappSelected((v: boolean) => !v)}
           className={
             (whatsappSelected
               ? "bg-[#5046e8] border-2 border-[#5046e8] text-white"
