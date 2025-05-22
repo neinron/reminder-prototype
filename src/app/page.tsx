@@ -12,21 +12,20 @@ import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from "@/
 import { FaWhatsapp } from "react-icons/fa";
 import SliderMarksDemo from "@/components/customized/slider/slider-09";
 import supabase from "@/lib/supabase";
-import { useFormData } from "@/lib/localStorage";
 
 export default function Home() {
-  const { formData, save: saveFormData } = useFormData();
-
-  // Initialize form state with saved data or defaults
-  const [plate, setPlate] = useState(formData?.plate || "");
-  const [city, setCity] = useState(formData?.city || "");
-  const [rest, setRest] = useState(formData?.rest || "");
-  const [contactValue, setContactValue] = useState(formData?.contactValue || "");
-  const [nameValue, setNameValue] = useState(formData?.nameValue || "");
-  const [smsSelected, setSmsSelected] = useState(formData?.smsSelected || false);
-  const [whatsappSelected, setWhatsappSelected] = useState(formData?.whatsappSelected || false);
-  const [benefit, setBenefit] = useState<string[]>(formData?.benefit || []);
-  const [benefitOther, setBenefitOther] = useState(formData?.benefitOther || "");
+  // Initialize form state
+  const [position, setPosition] = useState<GeolocationPosition | null>(null);
+  const [hasLocation, setHasLocation] = useState(false);
+  const [plate, setPlate] = useState("");
+  const [city, setCity] = useState("");
+  const [rest, setRest] = useState("");
+  const [contactValue, setContactValue] = useState("");
+  const [nameValue, setNameValue] = useState("");
+  const [smsSelected, setSmsSelected] = useState(false);
+  const [whatsappSelected, setWhatsappSelected] = useState(false);
+  const [benefit, setBenefit] = useState<string[]>([]);
+  const [benefitOther, setBenefitOther] = useState("");
   const [submitting, setSubmitting] = useState(false);
   const [success, setSuccess] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -45,155 +44,88 @@ export default function Home() {
   const [monthlyLabel, setMonthlyLabel] = useState(monthlyLabels[1]); // Start with 3 €
   const [perUseLabel, setPerUseLabel] = useState(perUseLabels[1]); // Start with 1 €
 
-  // Save form data to localStorage whenever it changes
-  useEffect(() => {
-    const formData = {
-      plate,
-      city,
-      rest,
-      contactValue,
-      nameValue,
-      smsSelected,
-      whatsappSelected,
-      benefit,
-      benefitOther
-    };
-    saveFormData(formData);
-  }, [plate, city, rest, contactValue, nameValue, smsSelected, whatsappSelected, benefit, benefitOther]);
-
-  // Log visit and geolocation on page load
-  useEffect(() => {
-    const logVisitWithGeo = async () => {
-      let visitorIp: string = '';
-      try {
-        // Get IP address first
-        visitorIp = await fetch('https://api.ipify.org?format=json')
-          .then(res => res.json())
-          .then(data => data.ip);
-
-        // First check if an entry exists for this IP
-        const { data: existingData, error: queryError } = await supabase
-          .from('signups')
-          .select('*')
-          .eq('ip', visitorIp);
-
-        if (queryError) {
-          console.error('Error querying existing data:', queryError);
-          return;
-        }
-
-        // Try to get geolocation if permission is granted
-        if (navigator.geolocation) {
-          try {
-            const position = await new Promise<GeolocationPosition>((resolve, reject) => {
-              navigator.geolocation.getCurrentPosition(resolve, reject);
-            });
-
-            console.log('Geolocation successful:', position);
-
-            // If no existing entry, create one with status 'visited' and geolocation
-            if (!existingData || existingData.length === 0) {
-              const { data: createdData, error: insertError } = await supabase
-                .from('signups')
-                .insert({
-                  ip: visitorIp,
-                  visited_at: new Date().toISOString(),
-                  status: 'visited',
-                  latitude: position.coords.latitude,
-                  longitude: position.coords.longitude,
-                  accuracy: position.coords.accuracy
-                })
-                .select('id')
-                .single();
-
-              if (insertError) {
-                console.error('Error creating new entry:', insertError);
-                return;
-              }
-
-              // Store the entry ID in localStorage
-              const formData = {
-                entryId: createdData.id
-              };
-              saveFormData(formData);
-            } else {
-              // Update existing entry with geolocation
-              await supabase
-                .from('signups')
-                .update({
-                  visited_at: new Date().toISOString(),
-                  latitude: position.coords.latitude,
-                  longitude: position.coords.longitude,
-                  accuracy: position.coords.accuracy
-                })
-                .eq('id', existingData[0].id);
-
-              // Store the existing entry ID in localStorage
-              const formData = {
-                entryId: existingData[0].id
-              };
-              saveFormData(formData);
-            }
-          } catch (error) {
-            console.log('Geolocation failed:', error);
-            // Fall back to just IP address if geolocation fails
-            handleIpOnly(visitorIp, existingData);
-          }
-        } else {
-          // Fallback for browsers without geolocation
-          handleIpOnly(visitorIp, existingData);
-        }
-      } catch (error) {
-        console.error('Error getting IP address:', error);
-      }
-    };
-
-    logVisitWithGeo();
-  }, []);
-
-  const handleIpOnly = async (visitorIp: string, existingData: any[]) => {
+  // Modify logVisit to handle both creating new entries and updating existing ones
+  const logVisit = async (position: GeolocationPosition | null, hasLocation: boolean) => {
     try {
-      // If no existing entry, create one with status 'visited'
-      if (!existingData || existingData.length === 0) {
+      // Get user's IP address
+      const visitorIp = await fetch('https://api.ipify.org?format=json')
+        .then(res => res.json())
+        .then(data => data.ip);
+
+      // Check for existing entry
+      const { data: existingData, error: queryError } = await supabase
+        .from('signups')
+        .select('id')
+        .eq('ip', visitorIp)
+        .maybeSingle();
+
+      if (queryError) {
+        console.error('Error querying existing data:', queryError);
+        throw queryError;
+      }
+
+      const locationData = hasLocation && position ? {
+        latitude: position.coords.latitude,
+        longitude: position.coords.longitude
+      } : {};
+
+      if (!existingData?.id) {
+        // Create new entry if none exists
         const { data: createdData, error: insertError } = await supabase
           .from('signups')
           .insert({
             ip: visitorIp,
             visited_at: new Date().toISOString(),
-            status: 'visited'
+            status: 'visited',
+            ...locationData
           })
           .select('id')
           .single();
 
         if (insertError) {
           console.error('Error creating new entry:', insertError);
-          return;
+          throw insertError;
         }
-
-        // Store the entry ID in localStorage
-        const formData = {
-          entryId: createdData.id
-        };
-        saveFormData(formData);
+        console.log('Created new entry with ID:', createdData?.id);
       } else {
-        // Update existing entry but keep the existing status
+        // Update existing entry
         await supabase
           .from('signups')
           .update({
-            visited_at: new Date().toISOString()
+            visited_at: new Date().toISOString(),
+            ...locationData
           })
-          .eq('id', existingData[0].id);
-
-        // Store the existing entry ID in localStorage
-        const formData = {
-          entryId: existingData[0].id
-        };
-        saveFormData(formData);
+          .eq('id', existingData.id);
+        console.log('Updated existing entry with ID:', existingData.id);
       }
     } catch (error) {
-      console.error('Error handling IP only:', error);
+      console.error('Error:', error);
     }
   };
+
+  // Use useEffect to handle geolocation
+  useEffect(() => {
+    try {
+      navigator.geolocation.getCurrentPosition(
+        (pos) => {
+          console.log('Geolocation successful:', pos);
+          setPosition(pos);
+          setHasLocation(true);
+          // Call logVisit when position is available
+          logVisit(pos, true);
+        },
+        (error) => {
+          console.log('Geolocation failed:', error);
+          // Call logVisit without location data
+          logVisit(null, false);
+        }
+      );
+    } catch (error) {
+      console.log('Geolocation error:', error);
+      // Call logVisit without location data
+      logVisit(null, false);
+    }
+  }, []);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -209,80 +141,104 @@ export default function Home() {
       // Get existing entry
       const { data: existingData, error: queryError } = await supabase
         .from('signups')
-        .select('*')
-        .eq('ip', visitorIp);
+        .select('id')
+        .eq('ip', visitorIp)
+        .maybeSingle();
 
       if (queryError) {
         console.error('Error querying existing data:', queryError);
         throw queryError;
       }
 
-      // Get the existing entry ID or create a new one
-      let entryId;
-      if (!existingData || existingData.length === 0) {
-        // This is the first visit, create a new entry
-        const { data: createdData, error: insertError } = await supabase
-          .from('signups')
-          .insert({
-            ip: visitorIp,
-            signup_at: new Date().toISOString(),
-            visited_at: new Date().toISOString(),
-            status: 'visited',
-            channel: smsSelected && whatsappSelected ? "sms+whatsapp" : smsSelected ? "sms" : whatsappSelected ? "whatsapp" : "",
-            plate: city && rest ? `${city}-${rest}` : plate,
-            phone: contactValue,
-            name: nameValue
-          })
-          .select('id')
-          .single();
+      const entryId = existingData?.id;
 
-        if (insertError) {
-          throw insertError;
-        }
-        entryId = createdData.id;
-      } else {
-        entryId = existingData[0].id;
+      if (!entryId) {
+        throw new Error('Entry ID not found');
+      }
 
-        // Update the existing entry with form data and set status to joined_waiting_list
-        const updateError = await supabase
-          .from('signups')
-          .update({
-            plate: city && rest ? `${city}-${rest}` : plate,
-            channel: smsSelected && whatsappSelected ? "sms+whatsapp" : smsSelected ? "sms" : whatsappSelected ? "whatsapp" : "",
-            phone: contactValue,
-            name: nameValue,
-            signup_at: new Date().toISOString(),
-            visited_at: new Date().toISOString(),
-            status: 'joined_waiting_list'
-          })
-          .eq('id', entryId)
-          .then(({ error }) => error);
+      // Update the entry with form data and set status to joined_waiting_list
+      const updateError = await supabase
+        .from('signups')
+        .update({
+          plate: city && rest ? `${city}-${rest}` : plate,
+          channel: smsSelected && whatsappSelected ? "sms+whatsapp" : smsSelected ? "sms" : whatsappSelected ? "whatsapp" : "",
+          phone: contactValue,
+          name: nameValue,
+          signup_at: new Date().toISOString(),
+          visited_at: new Date().toISOString(),
+          status: 'joined_waiting_list'
+        })
+        .eq('id', entryId)
+        .then(({ error }) => error);
 
-        if (updateError) {
-          throw updateError;
-        }
+      if (updateError) {
+        throw updateError;
       }
 
       setSuccess(true);
       window.scrollTo(0, 0);
-      // Clear form data from localStorage after successful submission
-      const formData = new FormData();
-      formData.append('plate', plate);
-      formData.append('city', city);
-      formData.append('rest', rest);
-      formData.append('contactValue', contactValue);
-      formData.append('nameValue', nameValue);
-      formData.append('smsSelected', smsSelected ? 'true' : 'false');
-      formData.append('whatsappSelected', whatsappSelected ? 'true' : 'false');
-      formData.append('benefit', JSON.stringify(benefit));
-      formData.append('benefitOther', benefitOther);
-      saveFormData(formData);
 
     } catch (error) {
       console.error('Error updating form data:', error);
       setError("Irgendwas lief schief. Bitte versuch es erneut.");
     } finally {
       setSubmitting(false);
+    }
+  };
+
+  const handleSaveFeedback = async () => {
+    setSaving(true);
+    setSaveSuccess(false);
+    setSaveError(null);
+
+    try {
+      // Get user's IP address
+      const visitorIp = await fetch('https://api.ipify.org?format=json')
+        .then(res => res.json())
+        .then(data => data.ip);
+
+      // Get existing entry
+      const { data: existingData, error: queryError } = await supabase
+        .from('signups')
+        .select('id')
+        .eq('ip', visitorIp)
+        .maybeSingle();
+
+      if (queryError) {
+        console.error('Error querying existing data:', queryError);
+        throw queryError;
+      }
+
+      const entryId = existingData?.id;
+
+      if (!entryId) {
+        throw new Error('Entry ID not found');
+      }
+
+      // Update the entry with feedback data and set status to joined+feedback
+      const feedbackError = await supabase
+        .from('signups')
+        .update({
+          status: 'joined+feedback',
+          benefit: benefit.length > 0 ? benefit : null,
+          benefit_other: benefitOther || null,
+          monthly_value: monthlyLabel || null,
+          per_use_value: perUseLabel || null,
+          reminder_lead: reminderLabel || null
+        })
+        .eq('id', entryId)
+        .then(({ error }) => error);
+
+      if (feedbackError) {
+        throw feedbackError;
+      }
+
+      setSaveSuccess(true);
+    } catch (error) {
+      console.error('Error saving feedback:', error);
+      setSaveError("Fehler beim Speichern der Feedbacks.");
+    } finally {
+      setSaving(false);
     }
   };
 
@@ -496,44 +452,7 @@ export default function Home() {
         <Button
           type="button"
           className="w-full bg-[#5046e8] hover:bg-[#5046e8] rounded-full text-base font-semibold mt-8"
-          onClick={async () => {
-            setSaving(true);
-            setSaveSuccess(false);
-            setSaveError(null);
-            try {
-              // Get the entry ID from localStorage or state
-              const { formData } = useFormData();
-              const entryId = formData?.entryId;
-
-              if (!entryId) {
-                throw new Error('Entry ID not found');
-              }
-
-              // Update the entry with feedback data and set status to joined+feedback
-              const feedbackError = await supabase
-                .from('signups')
-                .update({
-                  status: 'joined+feedback',
-                  benefit,
-                  benefitOther,
-                  monthlyValue: monthlyLabel,
-                  perUseValue: perUseLabel,
-                  reminderLead: reminderLabel
-                })
-                .eq('id', entryId)
-                .then(({ error }) => error);
-
-              if (feedbackError) {
-                throw feedbackError;
-              }
-
-              setSaveSuccess(true);
-            } catch (error) {
-              console.error('Error saving feedback:', error);
-              setSaveError("Fehler beim Speichern der Feedbacks.");
-            }
-            setSaving(false);
-          }}
+          onClick={handleSaveFeedback}
           disabled={saving}
         >
           {saving ? "Speichern..." : "Antworten speichern"}
