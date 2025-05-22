@@ -3,6 +3,11 @@ import { NextRequest, NextResponse } from "next/server";
 import { v4 as uuidv4 } from 'uuid';
 import supabase from "@/lib/supabase";
 
+interface VisitData {
+  uniqueId?: string;
+  unique_id?: string;
+}
+
 // Handle new visit creation
 export async function POST(req: NextRequest) {
   try {
@@ -19,10 +24,18 @@ export async function POST(req: NextRequest) {
     console.log('Raw request body:', text);
     console.log('Raw request body length:', text.length);
     
-    // Try to parse JSON
-    let data;
+    // Handle empty body gracefully
+    let data: VisitData = {};
+    if (text) {
+      try {
+        data = JSON.parse(text);
+      } catch (parseError) {
+        console.warn('Error parsing JSON, using empty object:', parseError);
+        data = {};
+      }
+    }
     try {
-      data = JSON.parse(text);
+      data = JSON.parse(text) as VisitData;
       console.log('Parsed JSON data:', data);
     } catch (parseError) {
       console.error('Error parsing JSON:', {
@@ -46,7 +59,7 @@ export async function POST(req: NextRequest) {
       );
     }
 
-    const { uniqueId } = data;
+    const uniqueId = data.uniqueId || data['unique_id']; // Support both camelCase and snake_case
 
     // Use existing UUID or generate new one
     const finalUniqueId = uniqueId || uuidv4();
@@ -113,7 +126,7 @@ export async function PUT(req: NextRequest) {
       );
     }
 
-    const { uniqueId } = data;
+    const uniqueId = data.uniqueId || data['unique_id']; // Support both camelCase and snake_case
 
     if (!uniqueId) {
       return NextResponse.json(
