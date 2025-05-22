@@ -1,25 +1,32 @@
 import { createClient } from "@supabase/supabase-js"
 
-// Log configuration
-console.log('Supabase configuration:', {
-  url: process.env.NEXT_PUBLIC_SUPABASE_URL,
-  key: process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY?.substring(0, 20) + '...' // Mask the key
-});
-
-// Create Supabase client with error handling
+// Create Supabase client with better error handling
 const supabase = createClient(
-  process.env.NEXT_PUBLIC_SUPABASE_URL!,
-  process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!
-);
+  process.env.NEXT_PUBLIC_SUPABASE_URL || 'https://xtuvhddxprlfydnpunlo.supabase.co',
+  process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY || 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Inh0dXZoZGR4cHJsZnlkbnB1bmxvIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NDU1MDg5MzksImV4cCI6MjA2MTA4NDkzOX0.8ObDMX7suKactx6H93I3wEwuQ_beqTOSN2BUPIM42lg'
+)
 
-// Test connection
-supabase.auth.getSession().then(session => {
-  console.log('Supabase connection test:', {
-    isConnected: !!session.data.session,
-    timestamp: new Date().toISOString()
-  });
-}).catch(error => {
-  console.error('Supabase connection error:', error);
-});
+// Test connection with retry
+async function testConnection() {
+  try {
+    const { data: { session }, error } = await supabase.auth.getSession()
+    if (error) {
+      console.error('Supabase auth error:', error)
+      return false
+    }
+    console.log('Supabase connection test:', {
+      isConnected: !!session,
+      timestamp: new Date().toISOString(),
+      session: session ? 'authenticated' : 'not authenticated'
+    })
+    return !!session
+  } catch (error) {
+    console.error('Supabase connection error:', error)
+    return false
+  }
+}
+
+// Initial connection test
+const isConnected = testConnection()
 
 export default supabase
