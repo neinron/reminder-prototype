@@ -8,11 +8,31 @@ export async function POST(req: NextRequest) {
   try {
     console.log('Visit endpoint called - Creating new visitor entry');
     
-    // Get and parse request body
-    const data = await req.json();
+    // Log raw request body
+    const text = await req.text();
+    console.log('Raw request body:', text);
     
+    // Try to parse JSON
+    let data;
+    try {
+      data = JSON.parse(text);
+      console.log('Parsed JSON data:', data);
+    } catch (parseError) {
+      console.error('Error parsing JSON:', {
+        error: parseError,
+        rawBody: text
+      });
+      return NextResponse.json(
+        { 
+          error: 'Invalid JSON format',
+          details: parseError instanceof Error ? parseError.message : 'Unknown error'
+        },
+        { status: 400 }
+      );
+    }
+
     if (!data) {
-      console.error('Empty request body received');
+      console.error('Empty parsed data received');
       return NextResponse.json(
         { error: 'Empty request body' },
         { status: 400 }
@@ -55,11 +75,31 @@ export async function PUT(req: NextRequest) {
   try {
     console.log('Visit update endpoint called');
     
-    // Get and parse request body
-    const data = await req.json();
+    // Log raw request body
+    const text = await req.text();
+    console.log('Raw request body:', text);
     
+    // Try to parse JSON
+    let data;
+    try {
+      data = JSON.parse(text);
+      console.log('Parsed JSON data:', data);
+    } catch (parseError) {
+      console.error('Error parsing JSON:', {
+        error: parseError,
+        rawBody: text
+      });
+      return NextResponse.json(
+        { 
+          error: 'Invalid JSON format',
+          details: parseError instanceof Error ? parseError.message : 'Unknown error'
+        },
+        { status: 400 }
+      );
+    }
+
     if (!data) {
-      console.error('Empty request body received');
+      console.error('Empty parsed data received');
       return NextResponse.json(
         { error: 'Empty request body' },
         { status: 400 }
