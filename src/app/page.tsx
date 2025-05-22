@@ -66,12 +66,7 @@ export default function Home() {
     const logVisitWithGeo = async () => {
       let visitorIp: string = '';
       try {
-        // Get geolocation
-        const position = await new Promise<GeolocationPosition>((resolve, reject) => {
-          navigator.geolocation.getCurrentPosition(resolve, reject);
-        });
-
-        // Get IP address
+        // Get IP address first
         visitorIp = await fetch('https://api.ipify.org?format=json')
           .then(res => res.json())
           .then(data => data.ip);
@@ -87,64 +82,118 @@ export default function Home() {
           return;
         }
 
-        // If no existing entry, create one with status 'visited'
-        if (!existingData || existingData.length === 0) {
-          await supabase
-            .from('signups')
-            .insert({
-              ip: visitorIp,
-              visited_at: new Date().toISOString(),
-              status: 'visited'
+        // Try to get geolocation if permission is granted
+        if (navigator.geolocation) {
+          try {
+            const position = await new Promise<GeolocationPosition>((resolve, reject) => {
+              navigator.geolocation.getCurrentPosition(resolve, reject);
             });
-        } else {
-          // Update existing entry
-          await supabase
-            .from('signups')
-            .update({
-              visited_at: new Date().toISOString(),
-              status: 'visited'
-            })
-            .eq('id', existingData[0].id);
-        }
 
+            console.log('Geolocation successful:', position);
+
+            // If no existing entry, create one with status 'visited' and geolocation
+            if (!existingData || existingData.length === 0) {
+              const { data: createdData, error: insertError } = await supabase
+                .from('signups')
+                .insert({
+                  ip: visitorIp,
+                  visited_at: new Date().toISOString(),
+                  status: 'visited',
+                  latitude: position.coords.latitude,
+                  longitude: position.coords.longitude,
+                  accuracy: position.coords.accuracy
+                })
+                .select('id')
+                .single();
+
+              if (insertError) {
+                console.error('Error creating new entry:', insertError);
+                return;
+              }
+
+              // Store the entry ID in localStorage
+              const formData = {
+                entryId: createdData.id
+              };
+              saveFormData(formData);
+            } else {
+              // Update existing entry with geolocation
+              await supabase
+                .from('signups')
+                .update({
+                  visited_at: new Date().toISOString(),
+                  latitude: position.coords.latitude,
+                  longitude: position.coords.longitude,
+                  accuracy: position.coords.accuracy
+                })
+                .eq('id', existingData[0].id);
+
+              // Store the existing entry ID in localStorage
+              const formData = {
+                entryId: existingData[0].id
+              };
+              saveFormData(formData);
+            }
+          } catch (error) {
+            console.log('Geolocation failed:', error);
+            // Fall back to just IP address if geolocation fails
+            handleIpOnly(visitorIp, existingData);
+          }
+        } else {
+          // Fallback for browsers without geolocation
+          handleIpOnly(visitorIp, existingData);
+        }
       } catch (error) {
-        console.error('Error getting geolocation:', error);
-        // Still log the visit without location data
-        // First check if an entry exists for this IP
-        const { data: existingData, error: queryError } = await supabase
-          .from('signups')
-          .select('*')
-          .eq('ip', visitorIp);
-
-        if (queryError) {
-          console.error('Error querying existing data:', queryError);
-          return;
-        }
-
-        // If no existing entry, create one with status 'visited'
-        if (!existingData || existingData.length === 0) {
-          await supabase
-            .from('signups')
-            .insert({
-              ip: visitorIp,
-              visited_at: new Date().toISOString(),
-              status: 'visited'
-            });
-        } else {
-          // Update existing entry
-          await supabase
-            .from('signups')
-            .update({
-              visited_at: new Date().toISOString(),
-              status: 'visited'
-            })
-            .eq('id', existingData[0].id);
-        }
+        console.error('Error getting IP address:', error);
       }
     };
 
     logVisitWithGeo();
   }, []);
+
+  const handleIpOnly = async (visitorIp: string, existingData: any[]) => {
+    try {
+      // If no existing entry, create one with status 'visited'
+      if (!existingData || existingData.length === 0) {
+        const { data: createdData, error: insertError } = await supabase
+          .from('signups')
+          .insert({
+            ip: visitorIp,
+            visited_at: new Date().toISOString(),
+            status: 'visited'
+          })
+          .select('id')
+          .single();
+
+        if (insertError) {
+          console.error('Error creating new entry:', insertError);
+          return;
+        }
+
+        // Store the entry ID in localStorage
+        const formData = {
+          entryId: createdData.id
+        };
+        saveFormData(formData);
+      } else {
+        // Update existing entry but keep the existing status
+        await supabase
+          .from('signups')
+          .update({
+            visited_at: new Date().toISOString()
+          })
+          .eq('id', existingData[0].id);
+
+        // Store the existing entry ID in localStorage
+        const formData = {
+          entryId: existingData[0].id
+        };
+        saveFormData(formData);
+      }
+    } catch (error) {
+      console.error('Error handling IP only:', error);
+    }
+  };
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -168,16 +217,17 @@ export default function Home() {
         throw queryError;
       }
 
-      // If no existing entry, create one
+      // Get the existing entry ID or create a new one
       let entryId;
       if (!existingData || existingData.length === 0) {
+        // This is the first visit, create a new entry
         const { data: createdData, error: insertError } = await supabase
           .from('signups')
           .insert({
             ip: visitorIp,
             signup_at: new Date().toISOString(),
             visited_at: new Date().toISOString(),
-            status: 'joined_waiting_list',
+            status: 'visited',
             channel: smsSelected && whatsappSelected ? "sms+whatsapp" : smsSelected ? "sms" : whatsappSelected ? "whatsapp" : "",
             plate: city && rest ? `${city}-${rest}` : plate,
             phone: contactValue,
@@ -192,38 +242,25 @@ export default function Home() {
         entryId = createdData.id;
       } else {
         entryId = existingData[0].id;
-      }
 
-      // Update the entry with form data
-      const updateError = await supabase
-        .from('signups')
-        .update({
-          plate: city && rest ? `${city}-${rest}` : plate,
-          channel: smsSelected && whatsappSelected ? "sms+whatsapp" : smsSelected ? "sms" : whatsappSelected ? "whatsapp" : "",
-          phone: contactValue,
-          name: nameValue,
-          signup_at: new Date().toISOString(),
-          visited_at: new Date().toISOString(),
-          status: 'joined_waiting_list'
-        })
-        .eq('id', entryId)
-        .then(({ error }) => error);
+        // Update the existing entry with form data and set status to joined_waiting_list
+        const updateError = await supabase
+          .from('signups')
+          .update({
+            plate: city && rest ? `${city}-${rest}` : plate,
+            channel: smsSelected && whatsappSelected ? "sms+whatsapp" : smsSelected ? "sms" : whatsappSelected ? "whatsapp" : "",
+            phone: contactValue,
+            name: nameValue,
+            signup_at: new Date().toISOString(),
+            visited_at: new Date().toISOString(),
+            status: 'joined_waiting_list'
+          })
+          .eq('id', entryId)
+          .then(({ error }) => error);
 
-      if (updateError) {
-        throw updateError;
-      }
-
-      // Update status to joined+feedback
-      const feedbackError = await supabase
-        .from('signups')
-        .update({
-          status: 'joined+feedback'
-        })
-        .eq('id', entryId)
-        .then(({ error }) => error);
-
-      if (feedbackError) {
-        throw feedbackError;
+        if (updateError) {
+          throw updateError;
+        }
       }
 
       setSuccess(true);
@@ -464,24 +501,36 @@ export default function Home() {
             setSaveSuccess(false);
             setSaveError(null);
             try {
-              const res = await fetch("/api/feedback", {
-                method: "POST",
-                headers: { "Content-Type": "application/json" },
-                body: JSON.stringify({
-                  monthlyValue: monthlyLabel,
-                  perUseValue: perUseLabel,
-                  reminderLead: reminderLabel,
+              // Get the entry ID from localStorage or state
+              const { formData } = useFormData();
+              const entryId = formData?.entryId;
+
+              if (!entryId) {
+                throw new Error('Entry ID not found');
+              }
+
+              // Update the entry with feedback data and set status to joined+feedback
+              const feedbackError = await supabase
+                .from('signups')
+                .update({
+                  status: 'joined+feedback',
                   benefit,
                   benefitOther,
-                }),
-              });
-              if (res.ok) {
-                setSaveSuccess(true);
-              } else {
-                setSaveError("Fehler beim Speichern.");
+                  monthlyValue: monthlyLabel,
+                  perUseValue: perUseLabel,
+                  reminderLead: reminderLabel
+                })
+                .eq('id', entryId)
+                .then(({ error }) => error);
+
+              if (feedbackError) {
+                throw feedbackError;
               }
-            } catch {
-              setSaveError("Fehler beim Speichern.");
+
+              setSaveSuccess(true);
+            } catch (error) {
+              console.error('Error saving feedback:', error);
+              setSaveError("Fehler beim Speichern der Feedbacks.");
             }
             setSaving(false);
           }}
