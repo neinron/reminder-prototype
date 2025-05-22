@@ -4,18 +4,16 @@ import { NextResponse } from 'next/server';
 export async function GET() {
   try {
     // Get the API key from environment variables
-    const apiKey = process.env.GETGEOAPI_KEY;
-    if (!apiKey) {
-      // Return error if API key is not configured
-      return new NextResponse(
-        JSON.stringify({ error: 'API key not configured' }),
-        { status: 500, headers: { 'Content-Type': 'application/json' } }
-      );
-    }
+    const apiKey = process.env.NEXT_PUBLIC_GETGEOAPI_KEY;
+    
+    // Use either the API key endpoint or the free endpoint
+    const baseEndpoint = apiKey 
+      ? `https://api.getgeoapi.com/v2/ip/check?api_key=${apiKey}&format=json&filter=location`
+      : 'https://api.getgeoapi.com/v2/ip/check?format=json&filter=location';
 
     // Build the request URL with parameters
     const response = await fetch(
-      `https://api.getgeoapi.com/v2/ip/check?api_key=${apiKey}&format=json&filter=location`,
+      baseEndpoint,
       {
         method: 'GET',
         headers: {
