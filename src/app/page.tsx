@@ -18,17 +18,31 @@ export default function Home() {
   // State variables for form handling and UI state
   const [position, setPosition] = useState<GeolocationPosition | null>(null);
   const [hasLocation, setHasLocation] = useState(false);
-  
+  const [userIp, setUserIp] = useState<string>('');
+
   // Initialize geolocation when component mounts
   useEffect(() => {
     if (navigator.geolocation) {
+      console.log('Geolocation is supported');
+      
       navigator.geolocation.getCurrentPosition(
         (pos) => {
+          console.log('Successfully got position:', {
+            latitude: pos.coords.latitude,
+            longitude: pos.coords.longitude,
+            accuracy: pos.coords.accuracy
+          });
           setPosition(pos);
           setHasLocation(true);
+          setRetryCount(0);
         },
         (error) => {
-          console.error('Error getting location:', error);
+          console.error('Geolocation error:', {
+            code: error.code,
+            message: error.message,
+            errorType: error.constructor.name
+          });
+          
         },
         { 
           timeout: 5000,
@@ -37,7 +51,7 @@ export default function Home() {
         }
       );
     } else {
-      console.error('Geolocation is not supported by this browser');
+      console.log('Geolocation is not supported by this browser');
     }
   }, []);
 
@@ -68,9 +82,7 @@ export default function Home() {
   const [saveError, setSaveError] = useState<string | null>(null);
   
   // Geolocation tracking
-  const [geolocationStatus, setGeolocationStatus] = useState<string | null>(null);
   const [retryCount, setRetryCount] = useState(0);
-  const [ipError, setIpError] = useState<string | null>(null);
   const MAX_RETRIES = 3;
 
   // Labels for the slider components
@@ -99,6 +111,9 @@ export default function Home() {
         throw new Error('Invalid response: IP address not found');
       }
 
+      // Store the IP address in state
+      setUserIp(data.ip);
+      
       console.log('IP and location data:', data);
       return data;
     } catch (error) {
@@ -122,27 +137,25 @@ export default function Home() {
           region: 'Unknown',
           country: 'Unknown'
         };
-      } else {
-        setIpError(null);
       }
 
-      // Check if user already exists in database
+      // Check if user already exists in database using the stored IP
       const { data: existingData, error: queryError } = await supabase
         .from('signups')
         .select('id, status')
-        .eq('ip', ipData.ip)
+        .eq('ip', userIp || ipData.ip) // Use stored IP if available
         .maybeSingle();
 
       // Use geolocation data if available, fallback to IP location
       const locationData = (hasLocation && position) ? {
-        ip: ipData.ip,
+        ip: userIp || ipData.ip, // Use stored IP if available
         latitude: position.coords.latitude,
         longitude: position.coords.longitude,
         city: ipData.city,
         region: ipData.region,
         country: ipData.country
       } : {
-        ip: ipData.ip,
+        ip: userIp || ipData.ip, // Use stored IP if available
         latitude: ipData.latitude,
         longitude: ipData.longitude,
         city: ipData.city,
@@ -189,7 +202,6 @@ export default function Home() {
       }
     } catch (error) {
       console.error('Error in logVisit:', error);
-      setIpError(error instanceof Error ? error.message : 'An unknown error occurred');
     }
   };
 
@@ -201,7 +213,6 @@ export default function Home() {
         await logVisit(position, hasLocation);
       } catch (error) {
         console.error('Error in geolocation attempt:', error);
-        setGeolocationStatus('Location data not available');
       }
     };
 
@@ -236,11 +247,11 @@ export default function Home() {
         };
       }
 
-      // Get existing entry
+      // Get existing entry using stored IP
       const { data: existingData, error: queryError } = await supabase
         .from('signups')
         .select('id')
-        .eq('ip', ipData.ip)
+        .eq('ip', userIp || ipData.ip) // Use stored IP if available
         .maybeSingle();
 
       if (queryError) {
@@ -308,11 +319,11 @@ export default function Home() {
         };
       }
 
-      // Get existing entry
+      // Get existing entry using stored IP
       const { data: existingData, error: queryError } = await supabase
         .from('signups')
         .select('id')
-        .eq('ip', ipData.ip)
+        .eq('ip', userIp || ipData.ip) // Use stored IP if available
         .maybeSingle();
 
       if (queryError) {
@@ -450,11 +461,6 @@ export default function Home() {
       </div>
       {error && (
         <div className="text-red-600 text-sm text-center">{error}</div>
-      )}
-      {ipError && (
-        <div className="text-red-500 text-sm mb-4">
-          {ipError}
-        </div>
       )}
       <Button
         type="submit"
@@ -594,14 +600,9 @@ export default function Home() {
             </CardHeader>
           )}
           <CardContent>
-            {geolocationStatus && (
+            {retryCount > 0 && (
               <div className="text-sm text-muted-foreground mb-4">
-                {geolocationStatus}
-                {retryCount > 0 && (
-                  <div className="mt-1">
-                    Retry attempt {retryCount} of {MAX_RETRIES}
-                  </div>
-                )}
+                {retryCount} of {MAX_RETRIES}
               </div>
             )}
             {success ? PostSubmitContent : PreSubmitContent}
