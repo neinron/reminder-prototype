@@ -87,33 +87,24 @@ export default function Home() {
           return;
         }
 
-        let updateError: any;
-        if (existingData && existingData.length > 0) {
+        // If no existing entry, create one with status 'visited'
+        if (!existingData || existingData.length === 0) {
+          await supabase
+            .from('signups')
+            .insert({
+              ip: visitorIp,
+              visited_at: new Date().toISOString(),
+              status: 'visited'
+            });
+        } else {
           // Update existing entry
-          updateError = await supabase
+          await supabase
             .from('signups')
             .update({
               visited_at: new Date().toISOString(),
               status: 'visited'
             })
-            .eq('id', existingData[0].id)
-            .then(({ error }) => error);
-        } else {
-          // Create new entry
-          updateError = await supabase
-            .from('signups')
-            .insert({
-              ip: visitorIp,
-              signup_at: new Date().toISOString(),
-              visited_at: new Date().toISOString(),
-              status: 'visited',
-              channel: ''
-            })
-            .then(({ error }) => error);
-        }
-
-        if (updateError) {
-          console.error('Error logging visit:', updateError);
+            .eq('id', existingData[0].id);
         }
 
       } catch (error) {
@@ -130,33 +121,24 @@ export default function Home() {
           return;
         }
 
-        let updateError: any;
-        if (existingData && existingData.length > 0) {
+        // If no existing entry, create one with status 'visited'
+        if (!existingData || existingData.length === 0) {
+          await supabase
+            .from('signups')
+            .insert({
+              ip: visitorIp,
+              visited_at: new Date().toISOString(),
+              status: 'visited'
+            });
+        } else {
           // Update existing entry
-          updateError = await supabase
+          await supabase
             .from('signups')
             .update({
               visited_at: new Date().toISOString(),
               status: 'visited'
             })
-            .eq('id', existingData[0].id)
-            .then(({ error }) => error);
-        } else {
-          // Create new entry
-          updateError = await supabase
-            .from('signups')
-            .insert({
-              ip: visitorIp,
-              signup_at: new Date().toISOString(),
-              visited_at: new Date().toISOString(),
-              status: 'visited',
-              channel: ''
-            })
-            .then(({ error }) => error);
-        }
-
-        if (updateError) {
-          console.error('Error logging visit:', updateError);
+            .eq('id', existingData[0].id);
         }
       }
     };
