@@ -62,7 +62,7 @@ export default function Home() {
   const [perUseLabel, setPerUseLabel] = useState(perUseLabels[1]);
 
   // Function to get user's IP address and location data
-  const getIpAddress = async (): Promise<{ ip: string; location?: { latitude: number; longitude: number } } | null> => {
+  const getIpAddress = async (): Promise<{ ip: string; latitude: number; longitude: number; city: string; region: string; country: string } | null> => {
     try {
       // Fetch IP and location data from our API endpoint
       const response = await fetch('/api/ip');
@@ -92,7 +92,14 @@ export default function Home() {
       let ipData = await getIpAddress();
       if (!ipData) {
         console.log('Using fallback IP: unknown-ip');
-        ipData = { ip: 'unknown-ip' };
+        ipData = { 
+          ip: 'unknown-ip',
+          latitude: 0,
+          longitude: 0,
+          city: 'Unknown',
+          region: 'Unknown',
+          country: 'Unknown'
+        };
       } else {
         setIpError(null);
       }
@@ -106,24 +113,34 @@ export default function Home() {
 
       // Use geolocation data if available, fallback to IP location
       const locationData = (hasLocation && position) ? {
+        ip: ipData.ip,
         latitude: position.coords.latitude,
-        longitude: position.coords.longitude
+        longitude: position.coords.longitude,
+        city: ipData.city,
+        region: ipData.region,
+        country: ipData.country
       } : {
-        latitude: ipData.location?.latitude,
-        longitude: ipData.location?.longitude
+        ip: ipData.ip,
+        latitude: ipData.latitude,
+        longitude: ipData.longitude,
+        city: ipData.city,
+        region: ipData.region,
+        country: ipData.country
       };
 
       // Create or update user record
       if (!existingData?.id) {
         // Create new entry if user is new
-        const now = new Date();
-        now.setHours(now.getHours() + 2); // Add 2 hours for German timezone
         const { data: createdData, error: insertError } = await supabase
           .from('signups')
           .insert({
-            ip: ipData.ip,
-            visited_at: now.toISOString(),
-            ...locationData
+            ip: locationData.ip,
+            visited_at: new Date().toISOString(),
+            latitude: locationData.latitude,
+            longitude: locationData.longitude,
+            city: locationData.city,
+            region: locationData.region,
+            country: locationData.country
           })
           .select('id')
           .single();
@@ -133,13 +150,15 @@ export default function Home() {
         }
       } else {
         // Update existing entry with new visit data
-        const now = new Date();
-        now.setHours(now.getHours() + 2); // Add 2 hours for German timezone
         await supabase
           .from('signups')
           .update({
-            visited_at: now.toISOString(),
-            ...locationData
+            visited_at: new Date().toISOString(),
+            latitude: locationData.latitude,
+            longitude: locationData.longitude,
+            city: locationData.city,
+            region: locationData.region,
+            country: locationData.country
           })
           .eq('id', existingData.id);
         console.log('Updated existing entry with ID:', existingData.id);
@@ -183,7 +202,14 @@ export default function Home() {
       let ipData = await getIpAddress();
       if (!ipData) {
         console.log('Using fallback IP: unknown-ip');
-        ipData = { ip: 'unknown-ip' };
+        ipData = { 
+          ip: 'unknown-ip',
+          latitude: 0,
+          longitude: 0,
+          city: 'Unknown',
+          region: 'Unknown',
+          country: 'Unknown'
+        };
       }
 
       // Get existing entry
@@ -248,7 +274,14 @@ export default function Home() {
       let ipData = await getIpAddress();
       if (!ipData) {
         console.log('Using fallback IP: unknown-ip');
-        ipData = { ip: 'unknown-ip' };
+        ipData = { 
+          ip: 'unknown-ip',
+          latitude: 0,
+          longitude: 0,
+          city: 'Unknown',
+          region: 'Unknown',
+          country: 'Unknown',
+        };
       }
 
       // Get existing entry
