@@ -16,6 +16,12 @@ import { FaWhatsapp } from "react-icons/fa";
 import SliderMarksDemo from "@/components/customized/slider/slider-09";
 import supabase from "@/lib/supabase";
 
+// Check environment variables
+console.log('Environment variables:', {
+  supabaseUrl: process.env.NEXT_PUBLIC_SUPABASE_URL,
+  supabaseKey: process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY?.substring(0, 20) + '...' // Mask the key
+});
+
 
 // Storage key for UUID
 const VISITOR_UUID_KEY = 'visitor_uuid';

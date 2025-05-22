@@ -1,17 +1,14 @@
 /** @type {import('next').NextConfig} */
 const nextConfig = {
-  // Configure CORS for local development
+  // Simple CORS configuration
   async headers() {
     return [
       {
-        // Match all API routes
         source: '/api/:path*',
         headers: [
           {
             key: 'Access-Control-Allow-Origin',
-            value: process.env.NODE_ENV === 'development' 
-              ? 'http://localhost:3000' 
-              : 'https://reminder.wemolo.com',
+            value: '*',
           },
           {
             key: 'Access-Control-Allow-Methods',
@@ -22,6 +19,20 @@ const nextConfig = {
             value: 'Content-Type, Authorization',
           },
         ],
+      },
+    ];
+  },
+  // Environment variables
+  env: {
+    NEXT_PUBLIC_SUPABASE_URL: process.env.NEXT_PUBLIC_SUPABASE_URL,
+    NEXT_PUBLIC_SUPABASE_ANON_KEY: process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY
+  },
+  // Simple API route configuration
+  async rewrites() {
+    return [
+      {
+        source: '/api/:path*',
+        destination: '/api/:path*',
       },
     ];
   },
