@@ -111,7 +111,7 @@ export async function POST(req: NextRequest) {
       channel,
       phone,
       name,
-      signup_at: new Date(),
+      signup_at: new Date().toLocaleString('de-DE', { timeZone: 'Europe/Berlin' }),
       city: geo?.city || null,
       region: geo?.region || null,
       country: geo?.country || null,
