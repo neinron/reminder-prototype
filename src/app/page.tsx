@@ -58,13 +58,15 @@ export default function Home() {
 
   // Track visitor on mount
   useEffect(() => {
-    // Track visit immediately
+    console.log("[trackVisit] useEffect: Mounting Home component, running trackVisit");
     async function trackVisit() {
       try {
-        // First check localStorage
+        console.log("[trackVisit] Checking localStorage for VISITOR_UUID_KEY:", VISITOR_UUID_KEY);
         const storedUuid = localStorage.getItem(VISITOR_UUID_KEY);
+        console.log("[trackVisit] localStorage.getItem:", storedUuid);
         if (storedUuid) {
           // Check if entry exists in database
+          console.log("[trackVisit] Found existing visitor_uuid, checking in DB:", storedUuid);
           const checkResponse = await fetch('/api/visit/check', {
             method: 'POST',
             headers: {
@@ -73,8 +75,9 @@ export default function Home() {
             body: JSON.stringify({ uniqueId: storedUuid })
           });
 
+          console.log("[trackVisit] /api/visit/check response status:", checkResponse.status);
           if (!checkResponse.ok) {
-            // If check fails, create a new entry
+            console.log("[trackVisit] Check failed, creating new entry for:", storedUuid);
             const createResponse = await fetch('/api/visit', {
               method: 'POST',
               headers: {
@@ -83,6 +86,7 @@ export default function Home() {
               body: JSON.stringify({ uniqueId: storedUuid })
             });
 
+            console.log("[trackVisit] /api/visit createResponse status:", createResponse.status);
             if (!createResponse.ok) {
               throw new Error('Failed to create visit entry');
             }
@@ -90,10 +94,12 @@ export default function Home() {
 
           // Use stored UUID
           setVisitorUuid(storedUuid);
+          console.log("[trackVisit] Set visitorUuid state to storedUuid:", storedUuid);
           return;
         }
 
         // If no stored UUID, create a new one
+        console.log("[trackVisit] No visitor_uuid found, creating new entry...");
         const response = await fetch('/api/visit', {
           method: 'POST',
           headers: {
@@ -102,17 +108,22 @@ export default function Home() {
           body: JSON.stringify({}) // Send an empty object
         });
 
+        console.log("[trackVisit] /api/visit response status:", response.status);
         if (!response.ok) {
           throw new Error('Failed to track visit');
         }
 
         const data = await response.json();
+        console.log("[trackVisit] /api/visit response JSON:", data);
         if (data.uniqueId) {
           localStorage.setItem(VISITOR_UUID_KEY, data.uniqueId);
           setVisitorUuid(data.uniqueId);
+          console.log("[trackVisit] Set visitorUuid state and localStorage to:", data.uniqueId);
+        } else {
+          console.warn("[trackVisit] No uniqueId in /api/visit response");
         }
       } catch (error) {
-        console.error('Error tracking visit:', error);
+        console.error('[trackVisit] Error tracking visit:', error);
       }
     }
 
