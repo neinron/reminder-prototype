@@ -13,44 +13,58 @@ import { FaWhatsapp } from "react-icons/fa";
 import SliderMarksDemo from "@/components/customized/slider/slider-09";
 import supabase from "@/lib/supabase";
 
+// Main component for the parking reminder service test
 export default function Home() {
-  // Initialize form state
+  // State variables for form handling and UI state
   const [position, setPosition] = useState<GeolocationPosition | null>(null);
   const [hasLocation, setHasLocation] = useState(false);
+  
+  // Form input states
   const [plate, setPlate] = useState("");
   const [city, setCity] = useState("");
   const [rest, setRest] = useState("");
   const [contactValue, setContactValue] = useState("");
   const [nameValue, setNameValue] = useState("");
+  
+  // Contact preferences
   const [smsSelected, setSmsSelected] = useState(false);
   const [whatsappSelected, setWhatsappSelected] = useState(false);
+  
+  // Feedback states
   const [benefit, setBenefit] = useState<string[]>([]);
   const [benefitOther, setBenefitOther] = useState("");
+  
+  // UI loading states
   const [submitting, setSubmitting] = useState(false);
   const [success, setSuccess] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [acceptedTerms, setAcceptedTerms] = useState(false);
+  
+  // Feedback saving states
   const [saving, setSaving] = useState(false);
   const [saveSuccess, setSaveSuccess] = useState(false);
   const [saveError, setSaveError] = useState<string | null>(null);
+  
+  // Geolocation tracking
   const [geolocationStatus, setGeolocationStatus] = useState<string | null>(null);
   const [retryCount, setRetryCount] = useState(0);
   const [ipError, setIpError] = useState<string | null>(null);
   const MAX_RETRIES = 3;
 
-  // Labels für die Sliders
+  // Labels for the slider components
   const reminderLabels = ["5 min", "15 min", "25 min", "30 min"];
   const monthlyLabels = ["1 €", "3 €", "5 €", "10 €"];
   const perUseLabels = ["0,50 €", "1 €", "2 €", "3 €"];
 
-  // Zustände für die Labels
-  const [reminderLabel, setReminderLabel] = useState(reminderLabels[1]); // Start with 15 min
-  const [monthlyLabel, setMonthlyLabel] = useState(monthlyLabels[1]); // Start with 3 €
-  const [perUseLabel, setPerUseLabel] = useState(perUseLabels[1]); // Start with 1 €
+  // State for slider values
+  const [reminderLabel, setReminderLabel] = useState(reminderLabels[1]);
+  const [monthlyLabel, setMonthlyLabel] = useState(monthlyLabels[1]);
+  const [perUseLabel, setPerUseLabel] = useState(perUseLabels[1]);
 
-  // Function to get IP address and location data from server
+  // Function to get user's IP address and location data
   const getIpAddress = async (): Promise<{ ip: string; location?: { latitude: number; longitude: number } } | null> => {
     try {
+      // Fetch IP and location data from our API endpoint
       const response = await fetch('/api/ip');
       
       if (!response.ok) {
@@ -71,7 +85,7 @@ export default function Home() {
     }
   };
 
-  // Modify logVisit to use the new IP retrieval method
+  // Function to log user visit and collect basic data
   const logVisit = async (position: GeolocationPosition | null, hasLocation: boolean) => {
     try {
       // Get user's IP and location data
@@ -79,31 +93,26 @@ export default function Home() {
       if (!ipData) {
         console.log('Using fallback IP: unknown-ip');
         ipData = { ip: 'unknown-ip' };
-        setIpError('Could not determine IP address');
       } else {
         setIpError(null);
       }
 
-      // Check for existing entry
+      // Check if user already exists in database
       const { data: existingData, error: queryError } = await supabase
         .from('signups')
         .select('id')
         .eq('ip', ipData.ip)
         .maybeSingle();
 
-      if (queryError) {
-        console.error('Error querying existing data:', queryError);
-        throw queryError;
-      }
-
-      // Use geolocation data if available, fallback to GetGeoAPI location
+      // Use geolocation data if available, fallback to IP location
       const locationData = (hasLocation && position) ? {
         latitude: position.coords.latitude,
         longitude: position.coords.longitude
       } : ipData.location || {};
 
+      // Create or update user record
       if (!existingData?.id) {
-        // Create new entry if none exists
+        // Create new entry if user is new
         const { data: createdData, error: insertError } = await supabase
           .from('signups')
           .insert({
@@ -115,13 +124,9 @@ export default function Home() {
           .select('id')
           .single();
 
-        if (insertError) {
-          console.error('Error creating new entry:', insertError);
-          throw insertError;
-        }
         console.log('Created new entry with ID:', createdData?.id);
       } else {
-        // Update existing entry
+        // Update existing entry with new visit data
         await supabase
           .from('signups')
           .update({
@@ -137,11 +142,11 @@ export default function Home() {
     }
   };
 
-  // Use useEffect to handle geolocation
+  // Effect to handle geolocation
   useEffect(() => {
     const attemptGeolocation = async () => {
       try {
-        // Check if geolocation is supported
+        // Check if geolocation is supported by browser
         if (!navigator.geolocation) {
           console.log('Geolocation is not supported by this browser');
           setGeolocationStatus('Geolocation is not supported by this browser');
@@ -159,6 +164,7 @@ export default function Home() {
             logVisit(pos, true);
           },
           async (error) => {
+            // Handle different types of geolocation errors
             let errorMessage = 'Location could not be determined.';
             switch (error.code) {
               case error.PERMISSION_DENIED:
@@ -183,7 +189,7 @@ export default function Home() {
             // Log visit without location data
             logVisit(null, false);
 
-            // Only retry for POSITION_UNAVAILABLE errors
+            // Retry for POSITION_UNAVAILABLE errors only
             if (error.code === error.POSITION_UNAVAILABLE && retryCount < MAX_RETRIES) {
               setRetryCount(prev => prev + 1);
               await new Promise(resolve => setTimeout(resolve, 2000)); // Wait 2 seconds before retry
@@ -213,6 +219,7 @@ export default function Home() {
     };
   }, []);
 
+  // Handle form submission - part of the test phase
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setSubmitting(true);
@@ -268,12 +275,13 @@ export default function Home() {
 
     } catch (error) {
       console.error('Error updating form data:', error);
-      setError("Irgendwas lief schief. Bitte versuch es erneut.");
+      setError("Something went wrong. Please try again.");
     } finally {
       setSubmitting(false);
     }
   };
 
+  // Handle feedback submission - part of the test phase
   const handleSaveFeedback = async () => {
     setSaving(true);
     setSaveSuccess(false);
@@ -326,7 +334,7 @@ export default function Home() {
       setSaveSuccess(true);
     } catch (error) {
       console.error('Error saving feedback:', error);
-      setSaveError("Fehler beim Speichern der Feedbacks.");
+      setSaveError("Error saving feedback.");
     } finally {
       setSaving(false);
     }

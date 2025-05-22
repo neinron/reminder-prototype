@@ -1,28 +1,34 @@
+// IP address and location retrieval API endpoint
 import { NextResponse } from 'next/server';
 
 export async function GET() {
   try {
+    // Get the API key from environment variables
     const apiKey = process.env.GETGEOAPI_KEY;
     if (!apiKey) {
+      // Return error if API key is not configured
       return new NextResponse(
         JSON.stringify({ error: 'API key not configured' }),
         { status: 500, headers: { 'Content-Type': 'application/json' } }
       );
     }
 
+    // Build the request URL with parameters
     const response = await fetch(
-        `https://api.getgeoapi.com/v2/ip/check?api_key=${apiKey}&format=json&filter=location`,
-        {
-          method: 'GET',
-          headers: {
-            'Accept': 'application/json',
-          },
-          next: { revalidate: 3600 }, // Cache for 1 hour
-        }
-      );
+      `https://api.getgeoapi.com/v2/ip/check?api_key=${apiKey}&format=json&filter=location`,
+      {
+        method: 'GET',
+        headers: {
+          'Accept': 'application/json',
+        },
+        next: { revalidate: 3600 }, // Cache for 1 hour to reduce API calls
+      }
+    );
 
+    // Handle response errors
     if (!response.ok) {
       const error = await response.json();
+      // Return formatted error response
       return new NextResponse(
         JSON.stringify({ error: `Failed to get IP address: ${error.message || response.status}` }),
         { status: response.status, headers: { 'Content-Type': 'application/json' } }
@@ -31,6 +37,7 @@ export async function GET() {
 
     const data = await response.json();
     
+    // Validate API response
     if (data.status !== 'success') {
       return new NextResponse(
         JSON.stringify({ error: `GetGeoAPI request failed: ${data.error?.message}` }),
@@ -38,6 +45,7 @@ export async function GET() {
       );
     }
 
+    // Format and return the data
     return new NextResponse(
       JSON.stringify({
         ip: data.ip,
@@ -49,6 +57,7 @@ export async function GET() {
       { headers: { 'Content-Type': 'application/json' } }
     );
   } catch (error) {
+    // Log and return server error
     console.error('Error in IP API:', error);
     return new NextResponse(
       JSON.stringify({ error: 'Internal server error' }),
