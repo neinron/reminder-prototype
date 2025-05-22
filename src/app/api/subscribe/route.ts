@@ -40,21 +40,10 @@ export async function POST(req: NextRequest) {
     let geo = geoCache.get(ip);
     if (!geo) {
       try {
-        // Use API key if available, otherwise use free endpoint
-        // The API key is used to access a paid geolocation API, which provides more accurate data.
-        const apiKey = process.env.NEXT_PUBLIC_IPAPI_KEY;
-        const geoUrl = apiKey ? `https://api.ipapi.com/${ip}?access_key=${apiKey}` : `https://ipapi.co/${ip}/json/`;
-        
-        const geoRes = await fetch(geoUrl, {
-          headers: {
-            'Accept': 'application/json'
-          }
-        });
-        
-        // Handle API response
-        if (!geoRes.ok) {
-          console.error('GeoIP API error:', await geoRes.text());
-          // Fallback: Use empty Geo data instead of error
+        // Use GetGeoAPI for geolocation data
+        const apiKey = process.env.GETGEOAPI_KEY;
+        if (!apiKey) {
+          console.error('No GetGeoAPI key configured');
           geo = {
             city: null,
             region: null,
@@ -63,15 +52,45 @@ export async function POST(req: NextRequest) {
             lon: null
           };
         } else {
-          const geoData = await geoRes.json();
-          geo = {
-            city: geoData.city,
-            region: geoData.region,
-            country: geoData.country_name,
-            lat: geoData.latitude,
-            lon: geoData.longitude
-          };
-          geoCache.set(ip, geo); // Cache the data
+          const geoUrl = `https://api.getgeoapi.com/api/v2/ip/check?api_key=${apiKey}&format=json`;
+          
+          const geoRes = await fetch(geoUrl, {
+            headers: {
+              'Accept': 'application/json'
+            }
+          });
+          
+          if (!geoRes.ok) {
+            console.error('GetGeoAPI error:', await geoRes.text());
+            geo = {
+              city: null,
+              region: null,
+              country: null,
+              lat: null,
+              lon: null
+            };
+          } else {
+            const geoData = await geoRes.json();
+            if (geoData.status === 'success') {
+              geo = {
+                city: geoData.city?.name || null,
+                region: geoData.area?.name || null,
+                country: geoData.country?.name || null,
+                lat: geoData.location?.latitude || null,
+                lon: geoData.location?.longitude || null
+              };
+              geoCache.set(ip, geo); // Cache the data
+            } else {
+              console.error('GetGeoAPI request failed:', geoData.error?.message);
+              geo = {
+                city: null,
+                region: null,
+                country: null,
+                lat: null,
+                lon: null
+              };
+            }
+          }
         }
       } catch (e) {
         console.error('Error getting geo data:', e);

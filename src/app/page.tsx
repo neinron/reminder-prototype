@@ -146,71 +146,16 @@ export default function Home() {
   useEffect(() => {
     const attemptGeolocation = async () => {
       try {
-        // Check if geolocation is supported by browser
-        if (!navigator.geolocation) {
-          console.log('Geolocation is not supported by this browser');
-          setGeolocationStatus('Geolocation is not supported by this browser');
-          logVisit(null, false);
-          return;
-        }
-
-        // Request geolocation with better error handling
-        navigator.geolocation.getCurrentPosition(
-          (pos) => {
-            console.log('Geolocation successful:', pos);
-            setPosition(pos);
-            setHasLocation(true);
-            setGeolocationStatus('Geolocation successful');
-            logVisit(pos, true);
-          },
-          async (error) => {
-            // Handle different types of geolocation errors
-            let errorMessage = 'Location could not be determined.';
-            switch (error.code) {
-              case error.PERMISSION_DENIED:
-                errorMessage = 'Permission to access location was denied.';
-                break;
-              case error.POSITION_UNAVAILABLE:
-                errorMessage = 'Location information is unavailable. Please ensure:';
-                errorMessage += '\n- Location services are enabled';
-                errorMessage += '\n- You are not in airplane mode';
-                errorMessage += '\n- You have a good GPS signal';
-                break;
-              case error.TIMEOUT:
-                errorMessage = 'The request to get user location timed out.';
-                break;
-              default:
-                errorMessage = 'An unknown error occurred.';
-                break;
-            }
-            console.log('Geolocation error:', error.code, '-', errorMessage);
-            setGeolocationStatus(errorMessage);
-
-            // Log visit without location data
-            logVisit(null, false);
-
-            // Retry for POSITION_UNAVAILABLE errors only
-            if (error.code === error.POSITION_UNAVAILABLE && retryCount < MAX_RETRIES) {
-              setRetryCount(prev => prev + 1);
-              await new Promise(resolve => setTimeout(resolve, 2000)); // Wait 2 seconds before retry
-              attemptGeolocation();
-            }
-          },
-          {
-            timeout: 5000, // 5 seconds timeout
-            enableHighAccuracy: true,
-            maximumAge: 0 // Don't use cached position
-          }
-        );
-      } catch (error) {
-        console.log('Geolocation error:', error);
-        setGeolocationStatus('An unknown error occurred');
+        // Log visit without location data since we're using GetGeoAPI
         logVisit(null, false);
+      } catch (error) {
+        console.error('Error in geolocation attempt:', error);
+        setGeolocationStatus('Location data not available');
       }
     };
 
     attemptGeolocation();
-  }, [retryCount]);
+  }, []);
 
   // Reset retry count when component unmounts
   useEffect(() => {
