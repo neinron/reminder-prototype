@@ -8,9 +8,16 @@ export async function POST(req: NextRequest) {
   try {
     console.log('Visit endpoint called - Creating new visitor entry');
     
+    // Log request headers
+    console.log('Request headers:', {
+      'Content-Type': req.headers.get('content-type'),
+      'Content-Length': req.headers.get('content-length')
+    });
+
     // Log raw request body
     const text = await req.text();
     console.log('Raw request body:', text);
+    console.log('Raw request body length:', text.length);
     
     // Try to parse JSON
     let data;
