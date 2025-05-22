@@ -79,7 +79,9 @@ export async function POST(req: NextRequest) {
       .insert([updateData]);
     console.log('Successfully created visitor entry in database');
 
-    return NextResponse.json({ success: true, uniqueId });
+    // Always return the UUID used (new or existing)
+    console.log('Returning uniqueId:', finalUniqueId);
+    return NextResponse.json({ success: true, uniqueId: finalUniqueId });
 
   } catch (error) {
     console.error('Error in visit route:', error);
