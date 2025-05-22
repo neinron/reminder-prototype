@@ -116,11 +116,13 @@ export default function Home() {
       // Create or update user record
       if (!existingData?.id) {
         // Create new entry if user is new
+        const now = new Date();
+        now.setHours(now.getHours() + 2); // Add 2 hours for German timezone
         const { data: createdData, error: insertError } = await supabase
           .from('signups')
           .insert({
             ip: ipData.ip,
-            visited_at: new Date().toLocaleString('de-DE', { timeZone: 'Europe/Berlin' }),
+            visited_at: now.toISOString(),
             ...locationData
           })
           .select('id')
@@ -131,10 +133,12 @@ export default function Home() {
         }
       } else {
         // Update existing entry with new visit data
+        const now = new Date();
+        now.setHours(now.getHours() + 2); // Add 2 hours for German timezone
         await supabase
           .from('signups')
           .update({
-            visited_at: new Date().toLocaleString('de-DE', { timeZone: 'Europe/Berlin' }),
+            visited_at: now.toISOString(),
             ...locationData
           })
           .eq('id', existingData.id);
@@ -200,6 +204,9 @@ export default function Home() {
         throw new Error('Entry ID not found');
       }
 
+      const now = new Date();
+      now.setHours(now.getHours() + 2); // Add 2 hours for German timezone
+
       // Update the entry with form data and set status to joined_waiting_list
       const updateError = await supabase
         .from('signups')
@@ -208,8 +215,8 @@ export default function Home() {
           channel: smsSelected && whatsappSelected ? "sms+whatsapp" : smsSelected ? "sms" : whatsappSelected ? "whatsapp" : "",
           phone: contactValue,
           name: nameValue,
-          signup_at: new Date().toLocaleString('de-DE', { timeZone: 'Europe/Berlin' }),
-          visited_at: new Date().toLocaleString('de-DE', { timeZone: 'Europe/Berlin' }),
+          signup_at: now.toISOString(),
+          visited_at: now.toISOString(),
           status: 'joined_waiting_list'
         })
         .eq('id', entryId)
