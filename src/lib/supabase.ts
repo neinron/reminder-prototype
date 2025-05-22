@@ -12,22 +12,16 @@ console.log('Supabase configuration:', {
   isProduction: process.env.NODE_ENV === 'production'
 })
 
-const supabase = createClient(supabaseUrl, supabaseAnonKey)
+const supabase = createClient(supabaseUrl, supabaseAnonKey, {
+  auth: {
+    autoRefreshToken: false,
+    persistSession: false
+  }
+})
 
 // Test connection with retry
 async function testConnection() {
   try {
-    // Test auth first
-    const { data: { session }, error: authError } = await supabase.auth.getSession()
-    if (authError) {
-      console.error('Supabase auth error:', {
-        message: authError.message,
-        code: authError.code,
-        status: authError.status
-      })
-      return false
-    }
-
     // Test database connection
     try {
       const { data, error: dbError } = await supabase
@@ -48,8 +42,7 @@ async function testConnection() {
       console.log('Supabase connection test:', {
         isConnected: true,
         timestamp: new Date().toISOString(),
-        databaseTest: data ? 'success' : 'failed',
-        authTest: session ? 'success' : 'failed'
+        databaseTest: data ? 'success' : 'failed'
       })
       return true
     } catch (dbError) {
