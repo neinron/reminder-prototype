@@ -48,8 +48,8 @@ export default function Home() {
 
   // Labels für die Sliders
   const reminderLabels = ["5 min", "15 min", "25 min", "30 min"];
-  const monthlyLabels = ["1 €", "3 €", "5 €", "10 €"];
-  const perUseLabels = ["0,50 €", "1 €", "2 €", "3 €"];
+  const monthlyLabels = ["0 €", "2 €", "4 €", "6 €", "8 €", "10 €"];
+  const perUseLabels = ["0 €", "0,5 €", "1 €", "2 €", "3 €", "4 €"];
 
   // Zustände für die Labels
   const [reminderLabel, setReminderLabel] = useState(reminderLabels[1]); // Start with 15 min
