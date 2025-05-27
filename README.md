@@ -175,10 +175,6 @@ npm run lint
 ### Other Platforms
 This is a standard Next.js application and can be deployed to any platform that supports Node.js applications.
 
-## 📝 License
-
-This project is licensed under the MIT License - see the [LICENSE](LICENSE) file for details.
-
 ## 🤝 Contributing
 
 1. Fork the project
