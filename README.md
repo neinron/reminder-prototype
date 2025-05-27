@@ -186,11 +186,3 @@ This project is licensed under the MIT License - see the [LICENSE](LICENSE) file
 3. Commit your changes (`git commit -m 'Add some AmazingFeature'`)
 4. Push to the branch (`git push origin feature/AmazingFeature`)
 5. Open a Pull Request
-
-## 📞 Support
-
-For support, please open an issue in the GitHub repository or contact support@wemolo.com.
-
----
-
-Made with ❤️ by [Wemolo](https://wemolo.com)
